@@ -29,6 +29,7 @@ import java.net.NetworkInterface
 
 class MainActivity : Activity() {
     private val kofiUrl = "https://ko-fi.com/kingarcher"
+    private val foodUrl = "https://doughbaybee.sg/"
     private val port = 8080
 
     private val queue = QueueManager()
@@ -185,16 +186,13 @@ class MainActivity : Activity() {
         joinBox = code
 
         // bottom left: food QR (Singapore only, host can turn it off)
-        val promo = cornerCode(BitmapFactory.decodeResource(resources, R.drawable.doughbay_qr), "Having a karaoke party?\nGet your party food sorted at DoughBaybee.sg")
+        val promo = cornerCode(BitmapFactory.decodeResource(resources, R.drawable.doughbay_qr), "Having a karaoke party?\nGet your party food sorted at DoughBaybee.sg") { openLink(foodUrl) }
         promo.visibility = View.GONE
         promoBox = promo
         idle.addView(promo, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.START).apply { setMargins(dp(32), 0, 0, dp(24)) })
 
         // bottom right: Ko-fi QR, same size as the left one
-        val kofi = cornerCode(BitmapFactory.decodeResource(resources, R.drawable.kofi_qr), "Enjoying the party?\nBuy us a coffee ☕\nTotally optional, thank you!")
-        kofi.isFocusable = true
-        kofi.isClickable = true
-        kofi.setOnClickListener { openKofi() }
+        val kofi = cornerCode(BitmapFactory.decodeResource(resources, R.drawable.kofi_qr), "Enjoying the party?\nBuy us a coffee ☕\nTotally optional, thank you!") { openLink(kofiUrl) }
         idle.addView(kofi, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, dp(32), dp(24)) })
 
         // settings screen: same page as on the phone, opened with OK on the remote
@@ -278,9 +276,9 @@ class MainActivity : Activity() {
         setShadowLayer(4f, 1f, 1f, Color.argb(160, 0, 0, 0))
     }
 
-    private fun openKofi() {
+    private fun openLink(url: String) {
         try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(kofiUrl)))
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
             // no browser on this box, the QR still works from a phone
         }
@@ -334,10 +332,15 @@ class MainActivity : Activity() {
     }
 
     // QR with a caption, used for the two corners
-    private fun cornerCode(code: Bitmap, caption: String): LinearLayout {
+    // only the QR picture is clickable, not the text under it
+    private fun cornerCode(code: Bitmap, caption: String, onClick: () -> Unit): LinearLayout {
         val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         box.addView(ImageView(this).apply {
             setImageBitmap(trimmed(code)); setBackgroundColor(Color.WHITE); setPadding(dp(6), dp(6), dp(6), dp(6))
+            isFocusable = true
+            isClickable = true
+            setOnClickListener { onClick() }
+            setOnFocusChangeListener { v, focused -> v.scaleX = if (focused) 1.1f else 1f; v.scaleY = if (focused) 1.1f else 1f }
         }, LinearLayout.LayoutParams(dp(96), dp(96)))
         box.addView(text(12f, Color.WHITE, Typeface.NORMAL).apply { gravity = Gravity.CENTER; text = caption },
             LinearLayout.LayoutParams(dp(210), ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(4) })

@@ -690,10 +690,42 @@ async function updateBox(card, tvStyle) {
   card.append(status, check, go);
   try { show(await (await fetch("/api/update")).json()); } catch (e) {}
 }
+// Song databases on the TV: folded away so the remote can skip past it. Text goes in with a tablet or an on-screen keyboard.
+function tvSources(card, start) {
+  let list = start.map((x) => ({ url: x.url, name: x.name }));
+  const toggle = el("button", "button is-dark", ""); toggle.style.cssText = "min-height:3.2rem;margin:.35rem 0;display:block;width:100%;text-align:left";
+  const box = el("div", "box"); box.style.display = "none";
+  const label = () => (box.style.display === "none" ? "▸ " : "▾ ") + "Song databases (" + list.length + ")";
+  toggle.textContent = label();
+  toggle.onclick = () => { box.style.display = box.style.display === "none" ? "" : "none"; toggle.textContent = label(); };
+  const rows = el("div"), note = el("p", "is-size-7 mb-2", "");
+  const save = async (next, done) => {
+    note.textContent = "Checking...";
+    const r = await (await fetch("/api/settings", { method: "POST", body: JSON.stringify({ sources: next }) })).json();
+    if (!r.ok) { note.textContent = r.error; return; }
+    list = next; note.textContent = done; draw(); toggle.textContent = label();
+  };
+  const draw = () => {
+    rows.textContent = "";
+    if (!list.length) rows.append(el("p", "is-size-7 has-text-grey mb-2", "None yet."));
+    list.forEach((x, n) => {
+      const r = el("div", "tv-row"); r.append(el("span", "lbl", (x.name ? x.name + ": " : "") + x.url));
+      const rm = el("button", "button is-danger is-light", "Remove"); rm.onclick = () => save(list.filter((_, k) => k !== n), "Removed.");
+      r.append(rm); rows.append(r);
+    });
+  };
+  const nm = el("input", "input mb-2"); nm.placeholder = "Name (optional)"; nm.maxLength = 30;
+  const url = el("input", "input mb-2"); url.placeholder = "https://...";
+  const add = el("button", "button is-primary", "Add"); add.style.cssText = "min-height:3.2rem;display:block;width:100%";
+  add.onclick = async () => { const u = url.value.trim(); if (!u) return; await save(list.concat([{ url: u, name: nm.value.trim() }]), "Added."); if (note.textContent === "Added.") { url.value = ""; nm.value = ""; } };
+  box.append(rows, el("p", "is-size-7 has-text-grey mb-2", "Address of a song database. Only add sources you are allowed to use."), nm, url, add, note);
+  draw();
+  card.append(toggle, box);
+}
 async function renderSettingsTV(card, st, P) {
   const top = el("div", "tv-row"); top.append(el("h1", "title mb-0", "Settings"));
   const close = el("button", "button is-info", "Close"); close.onclick = () => post("/api/closesettings", {}); top.append(close); card.append(top);
-  card.append(el("p", "is-size-7 has-text-grey mb-3", "Use up and down to move, OK to change. Text (names, PIN, song sources, score phrases) is edited from a phone."));
+  card.append(el("p", "is-size-7 has-text-grey mb-3", "Use up and down to move, OK to change. Text (names, PIN, score phrases) is edited from a phone. Song databases can be added here with a keyboard."));
   card.append(el("h2", "title is-5 mb-1", "Host PIN"));
   const pinRow = el("div", "tv-row"); const pinTxt = el("span", "title is-2 has-text-warning mb-0", "****"); pinRow.append(pinTxt);
   const pinBtn = el("button", "button is-dark", "Show PIN"); let pinTimer = null;
@@ -741,8 +773,7 @@ async function renderSettingsTV(card, st, P) {
   tvPress(card, "Start a new session", "is-dark", async () => { await post("/api/session/new", { name: "", clearQueue: false }); toast("New session started."); });
   tvPress(card, "Start a new session and clear the queue", "is-dark", async () => { await post("/api/session/new", { name: "", clearQueue: true }); toast("New session started."); });
   card.append(el("h2", "title is-5 mt-4 mb-1", "Song sources"));
-  const srcs = st.sources || [];
-  card.append(el("p", "is-size-7 has-text-grey mb-2", srcs.length ? srcs.length + (srcs.length === 1 ? " song source is set up." : " song sources are set up.") + " Change them from a phone." : "None yet. Add them from a phone (Settings)."));
+  tvSources(card, st.sources || []);
   card.append(el("h2", "title is-5 mt-4 mb-1", "System info"));
   card.append(el("p", "is-size-7 mb-4", "Version " + (st.version || "") + " · " + st.songCount + " songs"));
   card.append(el("h2", "title is-5 mt-4 mb-1", "Updates"));
