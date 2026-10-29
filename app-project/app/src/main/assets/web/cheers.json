@@ -1,0 +1,76 @@
+{
+ "cheers": [
+  {
+   "key": "clap",
+   "emoji": "👏",
+   "label": "Clap",
+   "special": false
+  },
+  {
+   "key": "airhorn",
+   "emoji": "📢",
+   "label": "Air horn",
+   "special": false
+  },
+  {
+   "key": "wow",
+   "emoji": "😮",
+   "label": "Wow",
+   "special": false
+  },
+  {
+   "key": "omg",
+   "emoji": "😱",
+   "label": "OH MY GOD",
+   "special": false
+  },
+  {
+   "key": "nani",
+   "emoji": "❗",
+   "label": "NANI",
+   "special": false
+  },
+  {
+   "key": "ohno",
+   "emoji": "😰",
+   "label": "Oh no..",
+   "special": false
+  },
+  {
+   "key": "faaa",
+   "emoji": "💀",
+   "label": "FAAA",
+   "special": false
+  },
+  {
+   "key": "stinks",
+   "emoji": "🥴",
+   "label": "This guy STINKS",
+   "special": false
+  },
+  {
+   "key": "toot",
+   "emoji": "💨",
+   "label": "Toot",
+   "special": false
+  },
+  {
+   "key": "dolphin",
+   "emoji": "🐬",
+   "label": "Dolphin",
+   "special": false
+  },
+  {
+   "key": "mi-shopee",
+   "emoji": "🛍️",
+   "label": "Shopee!",
+   "special": false
+  },
+  {
+   "key": "zawarudo",
+   "emoji": "⏱️",
+   "label": "ZA WARUDO!",
+   "special": true
+  }
+ ]
+}

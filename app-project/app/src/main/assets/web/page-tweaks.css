@@ -1,0 +1,24 @@
+/* Small fixes on top of Bulma for the phone pages. */
+
+/* 16px or more stops phones from zooming into a field when it is tapped */
+input {
+	font-size: 16px !important;
+}
+
+/* tables keep to the width of the page and let long titles wrap */
+table {
+	table-layout: fixed;
+	width: 100%;
+}
+
+/* hint text in a white field: dimmer than typed text, but still readable */
+.input::placeholder,
+.textarea::placeholder {
+	color: #6a7273;
+	opacity: 1;
+}
+
+/* the burger menu sits flush with the bar's right edge */
+#menu {
+	margin-right: 0;
+}

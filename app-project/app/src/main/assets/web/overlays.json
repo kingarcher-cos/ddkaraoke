@@ -1,0 +1,12 @@
+{
+ "overlays": [
+  {
+   "key": "ov-boom-7369",
+   "emoji": "💥",
+   "label": "Boom",
+   "placement": "full",
+   "keyed": true,
+   "ext": "webm"
+  }
+ ]
+}

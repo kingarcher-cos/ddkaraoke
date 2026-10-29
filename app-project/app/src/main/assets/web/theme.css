@@ -1,0 +1,15 @@
+:root{--km-accent:#c3b94b}
+.button.is-primary,.button.is-info,.button.is-link,.tag.is-primary,.tag.is-info,.tag.is-link,
+.notification.is-primary,.notification.is-info,.notification.is-link,.file.is-info .file-cta{background-color:#c3b94b!important;border-color:transparent!important;color:#111!important}
+.button.is-primary.is-light,.button.is-info.is-light,.button.is-link.is-light,.tag.is-info.is-light,.tag.is-primary.is-light{background-color:hsla(55, 49%, 52%, .18)!important;color:#c3b94b!important}
+.button.is-primary.is-outlined,.button.is-info.is-outlined,.button.is-link.is-outlined{background:transparent!important;border-color:#c3b94b!important;color:#c3b94b!important}
+.has-text-primary,.has-text-info,.has-text-link{color:#c3b94b!important}
+.content a:not(.button),a.km-link,.control-box a:hover{color:#c3b94b}
+.navbar,.navbar-menu,.navbar-dropdown{background-color:hsl(55, 45%, 13%)!important}
+html body nav.km-bottom .navbar-item.is-active,html body .navbar-item.is-active{color:#c3b94b!important}
+.tabs li.is-active a{color:#c3b94b!important;border-bottom-color:#c3b94b!important}
+.progress.is-info::-webkit-progress-value,.progress.is-primary::-webkit-progress-value,progress::-webkit-progress-value{background-color:#c3b94b!important}
+.progress.is-info::-moz-progress-bar,.progress.is-primary::-moz-progress-bar{background-color:#c3b94b!important}
+input[type=range],input[type=checkbox],input[type=radio],progress{accent-color:#c3b94b}
+.input:focus,.textarea:focus,.select select:focus{border-color:#c3b94b!important;box-shadow:0 0 0 .125em hsla(55, 49%, 52%, .18)!important}
+.session-ribbon-dot{background-color:#c3b94b!important}

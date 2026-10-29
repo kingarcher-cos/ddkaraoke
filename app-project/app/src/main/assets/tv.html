@@ -1,0 +1,659 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; }
+  #bg { position:fixed; inset:0; width:100%; height:100%; object-fit:cover;
+        filter: hue-rotate(135deg) saturate(135%) brightness(55%); }
+  #logo { position:fixed; left:50%; top:36%; transform:translate(-50%,-50%); width:46vw; max-width:780px; }
+  #song { position:fixed; inset:0; width:100%; height:100%; object-fit:contain; background:#000; display:none; }
+  #km-nico { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9000; }
+  #km-nico .c {
+    position: absolute; left: 0; top: 0; white-space: pre; line-height: 1.15; font-weight: 700;
+    font-family: "Noto Sans CJK JP", Arial, sans-serif; color: #fff; will-change: transform;
+    text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 2px 2px rgba(0,0,0,.6);
+  }
+  #km-nico .km-balloon {
+    position: absolute; bottom: -10vh; white-space: nowrap; font-size: 6vh; font-weight: 800; color: #fff;
+    padding: .25em .7em; border-radius: 1em; background: rgba(0, 0, 0, .35);
+    text-shadow: 0 0 6px #000, 2px 2px 3px #000; box-shadow: 0 0 18px rgba(255, 255, 255, .25);
+  }
+  .km-overlay { position: fixed; z-index: 8995; pointer-events: none; object-fit: contain; background: transparent; }
+  .km-overlay-full { inset: 0; width: 100vw; height: 100vh; }
+  .km-overlay-corner { right: 1vw; bottom: 6vh; width: 34vw; height: 34vh; object-position: right bottom; }
+  .km-overlay-random { width: 36vw; height: 36vh; }
+  #np, #un, #qn { position: fixed; z-index: 7000; display: none; color: #fff; background: rgba(0,0,0,.5); border-radius: .35vw;
+                  padding: .25vw .45vw; width: 17vw; line-height: 1.25; text-shadow: 0 0 3px #000; pointer-events: none; font-size: .95vw; }
+  #npwrap { position: fixed; top: .3vw; right: .3vw; z-index: 7000; display: flex; flex-direction: column; align-items: flex-end; gap: .25vw; pointer-events: none; }
+  #np { position: static; }
+  #tmr { display: none; color: #fff; background: rgba(0,0,0,.5); border-radius: .35vw; padding: .15vw .45vw; font-size: .85vw; text-shadow: 0 0 3px #000; font-variant-numeric: tabular-nums; }
+  #un { bottom: .3vw; right: .3vw; }
+  #qn { top: .3vw; left: .3vw; }
+  .bx-h { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .85em; }
+  .bx-h .lab { opacity: .8; font-weight: 600; }
+  .bx-h .sep { opacity: .5; padding: 0 .3em; }
+  .bx-h .who { font-weight: 700; }
+  .bx-t { overflow: hidden; white-space: nowrap; }
+  .bx-t span { display: inline-block; will-change: transform; }
+  .bx-time { font-size: .8em; opacity: .85; margin-top: .1vw; font-variant-numeric: tabular-nums; }
+  #qr { position: fixed; z-index: 7000; left: 1vw; bottom: 1vw; width: 4.2vw; background: #fff; padding: .3vw; border-radius: .4vw; display: none; image-rendering: pixelated; }
+  #score { position: fixed; inset: 0; z-index: 9500; display: none; background: url("/static/score/stage.jpg") center/cover; color: #fff; text-align: center; }
+  #your-score-text { font-size: 5rem; width: 100vw; position: absolute; top: 15vh; text-shadow: -1px 1px 5px black; }
+  #score-number-text { position: absolute; width: 100vw; font-size: 12rem; top: 25vh; font-weight: 800; text-shadow: -2px 2px 6px black; }
+  #score-review-text { position: absolute; width: 100vw; font-size: 3rem; top: 62vh; text-shadow: -1px 1px 5px black; padding: 0 6vw; box-sizing: border-box; }
+  #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 9600; pointer-events: none; }
+  #pal { position: fixed; right: 6vw; top: 40vh; width: 14vw; z-index: 7000; text-align: center; color: #fff; font-size: 1.6vw; font-weight: 700; text-shadow: 0 0 6px #000; display: none; }
+  #pal img { width: 100%; animation: pal-spin 2.4s linear infinite; filter: drop-shadow(0 0 8px rgba(0,0,0,.6)); }
+  #pal span { display: block; margin-top: .6vw; }
+  @keyframes pal-spin { to { transform: rotate(360deg); } }
+  #buddy { position: fixed; bottom: 6.6vw; left: 1.3vw; width: 3.6vw; z-index: 7000; opacity: .8; display: none; pointer-events: none; animation: pal-spin 6s linear infinite; filter: drop-shadow(0 0 6px rgba(0,0,0,.6)); }
+  #clock { position: fixed; bottom: 1vw; left: 50%; transform: translateX(-50%); z-index: 7000; color: #fff; font-size: 2.2vw; font-weight: 700; text-shadow: 0 0 6px #000; display: none; }
+</style></head>
+<body>
+<video id="bg" src="/static/bg.mp4" autoplay muted loop playsinline></video>
+<audio id="music" loop></audio>
+<div id="clock"></div>
+<img id="logo" src="/static/logo.png" alt="DoughDaddy Karaoke">
+<video id="song" playsinline></video>
+<div id="km-nico" aria-hidden="true"></div>
+<div id="npwrap"><div id="np"></div><div id="tmr"></div></div><div id="un"></div><div id="qn"></div>
+<img id="qr" alt="Scan to request songs">
+<div id="score"><div id="your-score-text">Your Score</div><div id="score-number-text"></div><div id="score-review-text"></div></div>
+<div id="pal"><img alt=""><span>Getting your song ready</span></div>
+<img id="buddy" alt="">
+<canvas id="fireworks"></canvas>
+<script>
+(function () {
+  const bg = document.getElementById("bg"), logo = document.getElementById("logo"), song = document.getElementById("song");
+  const layer = document.getElementById("km-nico");
+  function post(url, obj) { return fetch(url, { method: "POST", body: JSON.stringify(obj || {}) }).catch(() => {}); }
+  bg.play && bg.play().catch(() => {});
+
+  // comments, cheers, overlay clips
+  const ROWS = 11, SCROLL_MS = 4000;
+  const SIZE = { small: 0.6, medium: 1, big: 1.5 };
+  const COLORS = { white: "#fff", red: "#f00", pink: "#ff8080", orange: "#fc0", yellow: "#ff0",
+                   green: "#0f0", cyan: "#0ff", blue: "#00f", purple: "#c000ff", black: "#000" };
+  const lanes = new Array(ROWS).fill(null);
+  function rowHeight() { return window.innerHeight / ROWS; }
+  function freeScrollRow(width, now) {
+    const W = window.innerWidth, speed = (W + width) / SCROLL_MS, free = [];
+    for (let i = 0; i < ROWS; i++) {
+      const p = lanes[i];
+      if (!p) { free.push(i); continue; }
+      const elapsed = now - p.start, prevTail = W - elapsed * p.speed + p.width;
+      if (prevTail > W) continue;
+      const prevGone = SCROLL_MS - elapsed;
+      const catchUp = speed > p.speed ? (W - prevTail) / (speed - p.speed) : Infinity;
+      if (catchUp >= prevGone) free.push(i);
+    }
+    const pool = free.length ? free : [...Array(ROWS).keys()];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  function showMessage(m) {
+    const now = performance.now(), d = document.createElement("div");
+    d.className = "c"; d.textContent = m.text;
+    d.style.fontSize = (rowHeight() * 0.8 * (SIZE[m.size] || 1)) + "px";
+    d.style.color = COLORS[m.color] || "#fff";
+    if (m.color === "black") d.style.textShadow = "1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff";
+    layer.append(d);
+    const width = d.offsetWidth, W = window.innerWidth, H = rowHeight(), row = freeScrollRow(width, now);
+    lanes[row] = { start: now, speed: (W + width) / SCROLL_MS, width: width };
+    const y = Math.min(row * H, window.innerHeight - d.offsetHeight);
+    d.animate([{ transform: "translate(" + W + "px," + y + "px)" }, { transform: "translate(" + (-width) + "px," + y + "px)" }],
+              { duration: SCROLL_MS, easing: "linear" }).onfinish = () => d.remove();
+  }
+  const SFX = {};
+  let sfxCtx = null;
+  // normalise host-added sounds (built-in ones already are)
+  function loadSound(key, level) {
+    if (SFX[key]) return SFX[key];
+    SFX[key] = (async () => {
+      sfxCtx = sfxCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const buf = await sfxCtx.decodeAudioData(await (await fetch("/static/sfx/" + key + ".mp3")).arrayBuffer());
+      let gain = 1;
+      if (level) {
+        let sum = 0, peak = 0, n = 0;
+        for (let c = 0; c < buf.numberOfChannels; c++) {
+          const d = buf.getChannelData(c);
+          for (let i = 0; i < d.length; i += 4) { const v = d[i]; sum += v * v; n++; if (Math.abs(v) > peak) peak = Math.abs(v); }
+        }
+        const rms = Math.sqrt(sum / Math.max(1, n)) || 0.1;
+        gain = Math.max(0.2, Math.min(4, 0.15 / rms, 0.98 / Math.max(peak, 0.01)));
+      }
+      return { buf, gain };
+    })();
+    return SFX[key];
+  }
+  async function sound(key, level) {
+    try {
+      const s = await loadSound(key, level);
+      if (sfxCtx.state === "suspended") await sfxCtx.resume();
+      const src = sfxCtx.createBufferSource(), g = sfxCtx.createGain();
+      src.buffer = s.buf; g.gain.value = s.gain * 0.9;
+      src.connect(g).connect(sfxCtx.destination); src.start();
+    } catch (e) {
+      const a = new Audio("/static/sfx/" + key + ".mp3"); a.volume = 0.9; a.play().catch(() => {});
+    }
+  }
+  function balloon(c) {
+    const b = document.createElement("div");
+    b.className = "km-balloon"; b.textContent = c.emoji + c.user + c.emoji;
+    b.style.left = (8 + Math.random() * 70) + "vw";
+    const sway = (Math.random() < 0.5 ? -1 : 1) * (3 + Math.random() * 4);
+    layer.append(b);
+    b.animate([
+      { transform: "translate(0, 0) rotate(0deg)", opacity: 0 },
+      { transform: "translate(" + sway + "vw, -30vh) rotate(" + sway + "deg)", opacity: 1, offset: 0.25 },
+      { transform: "translate(" + (-sway) + "vw, -65vh) rotate(" + (-sway) + "deg)", opacity: 1, offset: 0.7 },
+      { transform: "translate(" + sway + "vw, -110vh) rotate(0deg)", opacity: 0 },
+    ], { duration: 5500, easing: "ease-out" }).onfinish = () => b.remove();
+  }
+  let timeStopped = false;
+  function zaWarudo() {
+    if (timeStopped) return;
+    timeStopped = true;
+    const targets = [song, bg];
+    targets.forEach((t) => { t.style.transition = "filter 2.5s ease-in"; t.style.filter = "grayscale(1) contrast(1.15)"; });
+    setTimeout(() => {
+      const wasPlaying = song.style.display !== "none" && !song.paused;
+      if (wasPlaying) song.pause();
+      setTimeout(() => {
+        if (wasPlaying) song.play().catch(() => {});
+        targets.forEach((t) => { t.style.transition = "filter 1.2s ease-out"; t.style.filter = ""; });
+        applyPrefs();
+        setTimeout(() => { timeStopped = false; }, 1200);
+      }, 3000);
+    }, 2500);
+  }
+  // "Ann queued: Song" notice, top left
+  let qnTimer = null;
+  function showQueued(e) {
+    if (prefs.showQueueNotices === false) return;
+    const box = document.getElementById("qn");
+    delete lastText["qn"];
+    setBox("qn", "Queued", e.singer, e.colour, e.title, false);
+    box.style.display = "block";
+    clearTimeout(qnTimer); qnTimer = setTimeout(() => { box.style.display = "none"; }, 7000);
+  }
+  let overlayEl = null;
+  // host clips keep their green screen, key it out while playing
+  function playKeyed(o, src) {
+    const v = document.createElement("video");
+    v.src = src; v.autoplay = true; v.playsInline = true; v.volume = 0.9; v.style.display = "none";
+    const cv = document.createElement("canvas");
+    cv.className = "km-overlay km-overlay-" + (o.placement || "full");
+    if (o.placement === "random") { cv.style.left = (5 + Math.random() * 55) + "vw"; cv.style.top = (8 + Math.random() * 40) + "vh"; }
+    const work = document.createElement("canvas"), wctx = work.getContext("2d", { willReadFrequently: true }), cctx = cv.getContext("2d");
+    let stop = false;
+    const done = () => { stop = true; v.pause(); v.remove(); cv.remove(); if (overlayEl === cv) overlayEl = null; };
+    v.addEventListener("ended", done); v.addEventListener("error", done);
+    setTimeout(done, 9000);                      // first 8 seconds only
+    function frame() {
+      if (stop) return;
+      if (v.videoWidth) {
+        const w = 640, h = Math.max(1, Math.round(640 * v.videoHeight / v.videoWidth));
+        if (work.width !== w || work.height !== h) { work.width = w; work.height = h; cv.width = w; cv.height = h; }
+        wctx.drawImage(v, 0, 0, w, h);
+        const img = wctx.getImageData(0, 0, w, h), d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i + 1], b = d[i + 2], gd = g - Math.max(r, b);
+          if (g > 90 && gd > 40) d[i + 3] = 0;
+          else if (g > 70 && gd > 15) { d[i + 3] = Math.max(0, 255 - (gd - 15) * 10); d[i + 1] = Math.max(r, b); }
+        }
+        cctx.putImageData(img, 0, 0);
+      }
+      if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(frame); else requestAnimationFrame(frame);
+    }
+    document.body.append(v, cv);
+    overlayEl = cv;
+    v.play().then(frame).catch(done);
+  }
+  function playOverlay(o) {
+    if (overlayEl) overlayEl.remove();
+    if (o.keyed === false) { playKeyed(o, "/static/overlays/" + o.key + "." + (o.ext || "mp4")); return; }
+    const v = document.createElement("video");
+    v.src = "/static/overlays/" + o.key + ".webm"; v.autoplay = true; v.playsInline = true; v.volume = 0.9;
+    v.className = "km-overlay km-overlay-" + (o.placement || "full");
+    if (o.placement === "random") { v.style.left = (5 + Math.random() * 55) + "vw"; v.style.top = (8 + Math.random() * 40) + "vh"; }
+    const done = () => { v.remove(); if (overlayEl === v) overlayEl = null; };
+    v.addEventListener("ended", done); v.addEventListener("error", done);
+    setTimeout(done, 12000);
+    document.body.append(v); overlayEl = v; v.play().catch(() => {});
+  }
+  let since = -1;
+  async function pollEvents() {
+    try {
+      const j = await (await fetch("/api/events?since=" + since, { cache: "no-store" })).json();
+      const first = since < 0; since = j.last;
+      if (!first) j.events.forEach((e) => {
+        if (e.type === "message") showMessage(e);
+        else if (e.type === "cheer") { sound(e.key, !!e.custom); balloon(e); if (e.key === "zawarudo") zaWarudo(); }
+        else if (e.type === "overlay") playOverlay(e);
+        else if (e.type === "queued") showQueued(e);
+      });
+    } catch (e) {}
+    setTimeout(pollEvents, 700);
+  }
+  pollEvents();
+
+  // vocals on/off: song audio goes through Web Audio. Off subtracts the stereo centre
+  // (usually the lead vocal) and adds the bass back, like the server does.
+  let vocalsOn = true, audioGraph = null, vocalStyle = "classic", styleId = -1;
+  function buildGraph() {
+    if (!(window.AudioContext || window.webkitAudioContext)) return null;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createMediaElementSource(song);
+    const g = (v) => { const n = ctx.createGain(); n.gain.value = v; return n; };
+    const direct = ctx.createGain();                 // untouched
+    const cut = ctx.createGain(); cut.gain.value = 0; // centre removed
+    const out = ctx.createGain(), dry = ctx.createGain(), wet = ctx.createGain();
+    wet.gain.value = 0;
+    out.connect(dry).connect(ctx.destination);
+    wet.connect(ctx.destination);
+    // mono songs cannot be split: just duck the voice range
+    const dip = ctx.createBiquadFilter(); dip.type = "peaking"; dip.frequency.value = 1300; dip.Q.value = 0.55; dip.gain.value = 0;
+    src.connect(dip).connect(direct).connect(out);
+
+    const split = ctx.createChannelSplitter(2), merge = ctx.createChannelMerger(2);
+    src.connect(split);
+    // gentle: remove the stereo centre, limited to the voice range, from each ear.
+    // Bass, drums and wide parts are untouched.
+    const mid = g(1);
+    split.connect(g(0.5), 0).connect(mid);
+    split.connect(g(0.5), 1).connect(mid);
+    let chain = mid;
+    for (let i = 0; i < 2; i++) {
+      const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 190; hp.Q.value = 0.6;
+      const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 5200; lp.Q.value = 0.6;
+      chain.connect(hp); hp.connect(lp); chain = lp;
+    }
+    const neg = g(-1);
+    chain.connect(neg);
+    split.connect(merge, 0, 0);
+    split.connect(merge, 1, 1);
+    neg.connect(merge, 0, 0);
+    neg.connect(merge, 0, 1);
+    merge.connect(cut).connect(out);
+
+    // dual mono check: if both channels match there is nothing to cancel
+    const side = g(1);
+    split.connect(g(1), 0).connect(side);
+    split.connect(g(-1), 1).connect(side);
+    const sideAn = ctx.createAnalyser(), midAn = ctx.createAnalyser();
+    sideAn.fftSize = 2048; midAn.fftSize = 2048;
+    side.connect(sideAn); mid.connect(midAn);
+    // classic (home server method): L minus R, with bass from the centre kept
+    const cutC = ctx.createGain(); cutC.gain.value = 0;
+    const mergeC = ctx.createChannelMerger(2);
+    split.connect(g(1), 0).connect(mergeC, 0, 0);
+    split.connect(g(-1), 1).connect(mergeC, 0, 0);
+    split.connect(g(1), 1).connect(mergeC, 0, 1);
+    split.connect(g(-1), 0).connect(mergeC, 0, 1);
+    const bass = ctx.createBiquadFilter(); bass.type = "lowpass"; bass.frequency.value = 160;
+    split.connect(g(0.5), 0).connect(bass);
+    split.connect(g(0.5), 1).connect(bass);
+    bass.connect(mergeC, 0, 0); bass.connect(mergeC, 0, 1);
+    mergeC.connect(cutC).connect(out);
+    return { ctx, direct, cut, cutC, out, dry, wet, dip, sideAn, midAn, shifter: null };
+  }
+  let monoNow = false, sideE = 0, midE = 0, monoSent = null;
+  function rms(an) {
+    const d = new Float32Array(an.fftSize); an.getFloatTimeDomainData(d);
+    let t = 0; for (let i = 0; i < d.length; i++) t += d[i] * d[i];
+    return t / d.length;
+  }
+  function watchMono() {
+    if (audioGraph && song.style.display !== "none" && !song.paused) {
+      const m = rms(audioGraph.midAn), sd = rms(audioGraph.sideAn);
+      if (m > 1e-5) { midE = midE * 0.97 + m; sideE = sideE * 0.97 + sd; }
+      const mono = midE > 0.01 && sideE / midE < 0.004;      // side energy is almost zero
+      if (mono !== monoNow) { monoNow = mono; applyVocals(vocalsOn); }
+      if (monoSent !== mono) { monoSent = mono; post("/api/audioinfo", { mono }); }
+    }
+    setTimeout(watchMono, 300);
+  }
+  watchMono();
+  function graph() {
+    if (!audioGraph) audioGraph = buildGraph();
+    if (audioGraph && audioGraph.ctx.state === "suspended") audioGraph.ctx.resume().catch(() => {});
+    return audioGraph;
+  }
+  function applyVocals(on) {
+    vocalsOn = on;
+    if (on && !audioGraph) return;
+    graph();
+    if (!audioGraph) return;
+    const { ctx, direct, cut, cutC, dip } = audioGraph, t = ctx.currentTime;
+    // on: untouched. off: cut in the chosen style, or duck the voice range if the song is mono
+    const off = !on && !monoNow;
+    const classic = off && vocalStyle === "classic", gentle = off && vocalStyle !== "classic";
+    [direct, cut, cutC].forEach((n) => n.gain.cancelScheduledValues(t));
+    direct.gain.setTargetAtTime(off ? 0 : 1, t, 0.05);
+    cutC.gain.setTargetAtTime(classic ? 1 : 0, t, 0.05);
+    cut.gain.setTargetAtTime(gentle ? 1 : 0, t, 0.05);
+    dip.gain.setTargetAtTime(!on && monoNow ? -10 : 0, t, 0.05);
+  }
+
+  // key change: granular pitch shifter in an AudioWorklet, tempo unchanged
+  const SHIFTER = `
+    class KmShift extends AudioWorkletProcessor {
+      static get parameterDescriptors() { return [{ name: "ratio", defaultValue: 1 }]; }
+      constructor() {
+        super();
+        this.win = Math.round(sampleRate * 0.07);
+        this.len = this.win * 4;
+        this.buf = [new Float32Array(this.len), new Float32Array(this.len)];
+        this.w = 0;
+        this.phase = 0;
+      }
+      read(b, pos) {
+        pos = (pos % this.len + this.len) % this.len;
+        const i = Math.floor(pos), f = pos - i;
+        return b[i] * (1 - f) + b[(i + 1) % this.len] * f;
+      }
+      process(inputs, outputs, params) {
+        const inp = inputs[0], out = outputs[0];
+        if (!inp.length) return true;
+        const ratio = params.ratio[0], n = inp[0].length, step = (1 - ratio) / this.win;
+        for (let i = 0; i < n; i++) {
+          this.phase = (this.phase + step) % 1;
+          if (this.phase < 0) this.phase += 1;
+          const p2 = (this.phase + 0.5) % 1;
+          const g1 = Math.sin(Math.PI * this.phase), g2 = Math.sin(Math.PI * p2);
+          for (let c = 0; c < out.length; c++) {
+            const b = this.buf[c] || this.buf[0];
+            b[this.w] = (inp[c] || inp[0])[i];
+            out[c][i] = g1 * this.read(b, this.w - this.phase * this.win - 1) + g2 * this.read(b, this.w - p2 * this.win - 1);
+          }
+          this.w = (this.w + 1) % this.len;
+        }
+        return true;
+      }
+    }
+    registerProcessor("km-shift", KmShift);`;
+  let shifterLoading = null, keyShift = 0;
+  async function applyKey(semitones) {
+    keyShift = semitones;
+    if (!semitones && (!audioGraph || !audioGraph.shifter)) return;
+    const gph = graph();
+    if (!gph) return;
+    if (!gph.shifter) {
+      if (!gph.ctx.audioWorklet) return;
+      shifterLoading = shifterLoading || gph.ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([SHIFTER], { type: "application/javascript" })));
+      await shifterLoading;
+      gph.shifter = new AudioWorkletNode(gph.ctx, "km-shift", { outputChannelCount: [2] });
+      gph.out.connect(gph.shifter).connect(gph.wet);
+    }
+    const t = gph.ctx.currentTime;
+    gph.shifter.parameters.get("ratio").setValueAtTime(Math.pow(2, keyShift / 12), t);
+    gph.dry.gain.setTargetAtTime(keyShift ? 0 : 1, t, 0.03);
+    gph.wet.gain.setTargetAtTime(keyShift ? 1 : 0, t, 0.03);
+  }
+
+
+  // fireworks over the score
+  // a burst is a set of sparks from one point that drift out and shrink away
+  const sky = document.getElementById("fireworks"), brush = sky.getContext("2d");
+  // size at show start, the TV web view can report 0x0 at load
+  function fitSky() { sky.width = window.innerWidth || 1920; sky.height = window.innerHeight || 1080; }
+  fitSky();
+  window.addEventListener("resize", fitSky);
+  const SPARKS_PER_BURST = 50, SHRINK = 0.98, MIN_RADIUS = 0.5, SHOW_MS = 5000;
+  let bursts = [], skyBusy = false, showOver = false;
+
+  function newBurst(x, y) {
+    const colour = "hsl(" + Math.random() * 360 + ",100%,60%)";
+    const sparks = [];
+    for (let i = 0; i < SPARKS_PER_BURST; i++) {
+      const heading = Math.random() * Math.PI * 2, pace = 1 + Math.random() * 2;
+      sparks.push({ x, y, dx: Math.cos(heading) * pace, dy: Math.sin(heading) * pace, r: 3 + Math.random() * 6 });
+    }
+    return { colour, sparks };
+  }
+
+  function paintSky() {
+    brush.clearRect(0, 0, sky.width, sky.height);
+    for (const burst of bursts) {
+      brush.fillStyle = burst.colour;
+      for (const s of burst.sparks) {
+        s.x += s.dx; s.y += s.dy; s.r *= SHRINK;
+        brush.beginPath();
+        brush.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        brush.fill();
+      }
+      burst.sparks = burst.sparks.filter((s) => s.r > MIN_RADIUS);
+    }
+    bursts = bursts.filter((b) => b.sparks.length);
+    if (bursts.length) requestAnimationFrame(paintSky); else skyBusy = false;
+  }
+
+  // higher score: more bursts, launched more often
+  function startFireworks(score) {
+    const tier = score < 30 ? 0 : score < 60 ? 1 : 2;
+    const perLaunch = tier + 1, gap = [1300, 800, 500][tier];
+    const began = Date.now();
+    fitSky();
+    (function launch() {
+      if (showOver || Date.now() - began > SHOW_MS) return;
+      const howMany = perLaunch + Math.floor(Math.random() * perLaunch);
+      for (let i = 0; i < howMany; i++) bursts.push(newBurst(Math.random() * sky.width, Math.random() * sky.height * 0.6));
+      if (!skyBusy) { skyBusy = true; paintSky(); }
+      setTimeout(launch, 200 + Math.random() * gap);
+    })();
+  }
+
+  // score screen (random score, nobody's voice is measured)
+  let scoreSkipId = null, skipNow = null;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function runScore() {
+    let phrases = { low: [], mid: [], high: [] };
+    try {
+      const pr = await (await fetch("/api/prefs", { cache: "no-store" })).json();
+      const split = (t) => String(t || "").split("\n").map((x) => x.trim()).filter(Boolean);
+      phrases = { low: split(pr.scoreLow), mid: split(pr.scoreMid), high: split(pr.scoreHigh) };
+    } catch (e) {}
+    if (!phrases.low.length && !phrases.mid.length && !phrases.high.length) {
+      try { phrases = await (await fetch("/static/score/phrases.json")).json(); } catch (e) {}
+    }
+    const el = document.getElementById("score"), num = document.getElementById("score-number-text"), rev = document.getElementById("score-review-text");
+    const value = Math.floor(Math.pow(Math.random(), 1 / 2) * 99);
+    const tier = value < 30 ? "low" : value < 60 ? "mid" : "high";
+    const list = phrases[tier] && phrases[tier].length ? phrases[tier] : [""];
+    const review = list[Math.floor(Math.random() * list.length)];
+    const drums = new Audio("/static/score/score-drums.mp3"), applause = new Audio("/static/score/applause-" + tier[0] + ".mp3");
+    let skipped = false;
+    const skip = new Promise((resolve) => { skipNow = () => { skipped = true; resolve(); }; });
+    el.style.display = "block"; showOver = false;
+    drums.volume = 0.3; drums.play().catch(() => {});
+    const spin = (async () => {
+      const t0 = performance.now();
+      while (performance.now() - t0 < 4100 && !skipped) {
+        num.textContent = String(Math.floor(Math.random() * 99) + 1).padStart(2, "0");
+        await sleep(100);
+      }
+    })();
+    await Promise.race([spin, skip]);
+    if (!skipped) {
+      num.textContent = String(value).padStart(2, "0"); rev.textContent = review;
+      startFireworks(value);
+      applause.play().catch(() => {});
+      await Promise.race([new Promise((r) => { applause.onended = r; applause.onerror = r; setTimeout(r, 12000); }), skip]);
+    }
+    skipNow = null; showOver = true;
+    drums.pause(); applause.pause();
+    rev.textContent = ""; num.textContent = "";
+    brush.clearRect(0, 0, sky.width, sky.height); bursts = [];
+    el.style.display = "none";
+  }
+
+  // host options
+  let prefs = {};
+  const music = document.getElementById("music"), clock = document.getElementById("clock");
+  let idleNow = true;
+  function applyPrefs() {
+    bg.style.filter = "hue-rotate(" + (prefs.bgHue ?? 135) + "deg) saturate(" + (prefs.bgSat ?? 135) + "%) brightness(" + (prefs.bgBright ?? 55) + "%)";
+    bg.style.visibility = prefs.disableBgVideo ? "hidden" : "visible";
+    song.volume = Math.max(0, Math.min(1, (prefs.videoVolume ?? 100) / 100));
+    music.volume = Math.max(0, Math.min(1, (prefs.bgMusicVolume ?? 30) / 100));
+    clock.style.display = prefs.showClock && idleNow ? "block" : "none";
+    updateMusic();
+  }
+  // called from the app: true on Home button, false on return
+  let away = false;
+  window.__away = function (on) {
+    away = on;
+    if (on) { music.pause(); bg.pause(); song.pause(); return; }
+    if (audioGraph && audioGraph.ctx.state === "suspended") audioGraph.ctx.resume().catch(() => {});
+    if (sfxCtx && sfxCtx.state === "suspended") sfxCtx.resume().catch(() => {});
+    bg.play().catch(() => {});
+    updateMusic();
+    if (song.getAttribute("src")) {
+      if (song.ended) { if (!ended) onSongDone(false); }   // ended while we were away
+      else song.play().catch(() => {});
+    }
+  };
+  function updateMusic() {
+    if (away) { music.pause(); return; }
+    if (idleNow && !prefs.disableBgMusic) {
+      if (!music.getAttribute("src")) music.src = "/static/music.mp3";
+      music.play().catch(() => {});
+    } else {
+      music.pause();
+    }
+  }
+  function tickClock() { const d = new Date(); clock.textContent = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
+  setInterval(tickClock, 5000); tickClock();
+  async function pollPrefs() {
+    try { prefs = await (await fetch("/api/prefs", { cache: "no-store" })).json(); applyPrefs(); } catch (e) {}
+    setTimeout(pollPrefs, 8000);
+  }
+  pollPrefs();
+
+  // the song
+  const buddy = document.getElementById("buddy");   // spinning mascot, new one per song
+  let songId = -1, vocalsId = -1, keyId = -1, seekId = null, ended = false;
+  function showIdle(idle) {
+    bg.style.display = idle ? "block" : "none";
+    logo.style.display = idle ? "block" : "none";
+    song.style.display = idle ? "none" : "block";
+    ["np", "un", "qr", "tmr"].forEach((id) => { document.getElementById(id).style.display = idle ? "none" : "block"; });
+    if (!idle) document.getElementById("qr").src = "/api/joinqr.png?t=" + Date.now();
+    if (idle) { bg.play && bg.play().catch(() => {}); }
+    idleNow = idle;
+    clock.style.display = prefs.showClock && idle ? "block" : "none";
+    updateMusic();
+  }
+  let scoreOn = true;
+  async function onSongDone(failed) {
+    if (ended) return; ended = true;
+    if (scoreOn && !failed) { try { await runScore(); } catch (e) {} }
+    post("/api/ended", { failed: !!failed });
+  }
+  song.addEventListener("ended", () => onSongDone(false));
+  song.addEventListener("error", () => onSongDone(true));
+
+  async function pollPlayer() {
+    try {
+      const s = await (await fetch("/api/player", { cache: "no-store" })).json();
+      scoreOn = !!s.score;
+      if (s.skipScore !== undefined) {
+        if (scoreSkipId === null) scoreSkipId = s.skipScore;
+        else if (s.skipScore !== scoreSkipId) { scoreSkipId = s.skipScore; if (skipNow) skipNow(); }
+      }
+      if (s.song !== songId) {
+        songId = s.song; ended = false;
+        if (s.file) {
+          song.src = "/media/" + encodeURIComponent(s.file);
+          monoNow = false; sideE = 0; midE = 0; monoSent = null; graph();
+          showIdle(false);
+          buddy.src = "/static/pals/pal" + (1 + Math.floor(Math.random() * 5)) + ".webp"; buddy.style.display = "block";
+          if (!away) song.play().catch(() => {});
+        } else {
+          song.pause(); song.removeAttribute("src"); song.load();
+          showIdle(true);
+          buddy.style.display = "none";
+        }
+      }
+      if (s.style && s.style.id !== styleId) { styleId = s.style.id; vocalStyle = s.style.mode; applyVocals(vocalsOn); }
+      if (s.vocals.id !== vocalsId) { vocalsId = s.vocals.id; applyVocals(s.vocals.on); }
+      if (s.key.id !== keyId) { keyId = s.key.id; applyKey(s.key.semitones); }
+      if (seekId === null) seekId = s.seek.id;
+      else if (s.seek.id !== seekId) {
+        seekId = s.seek.id;
+        if (song.duration) {
+          const t = "to" in s.seek ? s.seek.to : song.currentTime + s.seek.by;
+          song.currentTime = Math.max(0, Math.min(song.duration - 1, t));
+        }
+      }
+    } catch (e) {}
+    setTimeout(pollPlayer, 500);
+  }
+  // long titles scroll left, pause, repeat
+  function startMarquee(wrap) {
+    const inner = wrap.firstChild;
+    let t0 = performance.now();
+    (function step(now) {
+      if (!wrap.isConnected) return;
+      const over = inner.offsetWidth - wrap.clientWidth;
+      if (over <= 2) { inner.style.transform = "none"; t0 = now; }
+      else {
+        const pause = 2500, travel = (over / 40) * 1000;      // 40 px/s
+        const t = (now - t0) % (pause + travel + pause);
+        const x = t < pause ? 0 : t < pause + travel ? ((t - pause) / travel) * over : over;
+        inner.style.transform = "translateX(" + (-x) + "px)";
+      }
+      requestAnimationFrame(step);
+    })(t0);
+  }
+  const lastText = {};
+  // "label | mic name" (name in the singer colour), title below
+  function setBox(id, label, singer, colour, title, withTimer) {
+    const box = document.getElementById(id);
+    const key = [label, singer, colour, title, withTimer].join("|");
+    if (lastText[id] === key) return;
+    lastText[id] = key;
+    box.textContent = "";
+    const h = document.createElement("div"); h.className = "bx-h";
+    const lab = document.createElement("span"); lab.className = "lab"; lab.textContent = label; h.append(lab);
+    if (singer) {
+      const sep = document.createElement("span"); sep.className = "sep"; sep.textContent = "|";
+      const who = document.createElement("span"); who.className = "who"; who.textContent = "🎤 " + singer; who.style.color = colour || "#fff";
+      h.append(sep, who);
+    }
+    const t = document.createElement("div"); t.className = "bx-t";
+    const sp = document.createElement("span"); sp.textContent = title; t.append(sp);
+    box.append(h, t);
+    if (withTimer) { const tm = document.createElement("div"); tm.className = "bx-time"; tm.id = "bx-time"; tm.textContent = "0:00 / 0:00"; box.append(tm); }
+    startMarquee(t);
+  }
+  function fmtT(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+  setInterval(() => {
+    const tm = document.getElementById("tmr");
+    if (tm && song.duration) tm.textContent = fmtT(song.currentTime) + " / " + fmtT(song.duration);
+  }, 500);
+  // mascot while the next song downloads and nothing is playing
+  const pal = document.getElementById("pal");
+  function showPal(on) {
+    if (on === (pal.style.display === "block")) return;
+    if (on) pal.querySelector("img").src = "/static/pals/pal" + (1 + Math.floor(Math.random() * 5)) + ".webp";
+    pal.style.display = on ? "block" : "none";
+  }
+  async function pollBoxes() {
+    try {
+      const j = await (await fetch("/api/queue", { cache: "no-store" })).json();
+      setBox("np", "Now Playing", j.nowSinger, j.nowColour, j.nowTitle || j.now || "", false);
+      if (j.queue.length) setBox("un", "Up next", j.queue[0].singer, j.queue[0].colour, j.queue[0].title, false);
+      else setBox("un", "Up next", "", "", "No song is queued.", false);
+      showPal(!j.now && j.queue.length > 0 && (j.queue[0].state === "downloading" || j.queue[0].state === "waiting"));
+    } catch (e) {}
+    setTimeout(pollBoxes, 2000);
+  }
+  pollBoxes();
+  setInterval(() => {
+    if (song.style.display !== "none" && song.duration) post("/api/position", { t: song.currentTime, d: song.duration });
+  }, 1000);
+  showIdle(true);
+  pollPlayer();
+})();
+</script>
+</body></html>

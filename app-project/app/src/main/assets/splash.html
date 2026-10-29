@@ -1,0 +1,16 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; }
+  video { position:fixed; inset:0; width:100%; height:100%; object-fit:cover;
+          filter: hue-rotate(135deg) saturate(135%) brightness(55%); }
+  #logo { position:fixed; left:50%; top:38%; transform:translate(-50%,-50%); width:46vw; max-width:780px; }
+</style></head>
+<body>
+<video id="bg" src="web/bg.mp4" autoplay muted loop playsinline></video>
+<img id="logo" src="web/logo.png" alt="DoughDaddy Karaoke">
+<script>
+  const v = document.getElementById("bg");
+  if (v.play) v.play().catch(function () {});
+</script>
+</body></html>

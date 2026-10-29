@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DoughDaddy Karaoke</title>
+<link rel="stylesheet" href="/static/bulma.min.css">
+<link rel="stylesheet" href="/static/dark-theme.css">
+<link rel="stylesheet" href="/static/page-tweaks.css">
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="stylesheet" href="/static/fontello/css/fontello.css">
+<style>
+  body { padding-bottom: 4.5rem; }
+  .km-row { display:flex; align-items:center; gap:.6rem; padding:.5rem .6rem; margin:.4rem 0; }
+  .km-row .km-t { flex:1; min-width:0; overflow-wrap:anywhere; }
+  .km-row .button { min-width:48px; min-height:48px; flex:none; }
+  .km-heart.is-on { color:#ff5a7a; }
+  .km-actions { display:flex; gap:.5rem; flex:none; }
+  nav.navbar:not(.km-bottom) { position:sticky; top:0; z-index:40; }
+  nav.km-bottom { position:fixed; left:0; right:0; bottom:0; z-index:30; min-height:3.25rem; }
+  nav.km-bottom .navbar-brand { width:100%; justify-content:space-around; min-height:3.25rem; }
+  nav.km-bottom .navbar-item { flex-direction:column; gap:2px; font-size:.72rem; padding:.35rem .5rem; cursor:pointer; }
+  nav.km-bottom .navbar-item i, nav.km-bottom .navbar-item svg { font-size:1.25rem; width:1.25rem; height:1.25rem; margin:0 !important; }
+  nav.km-bottom .navbar-item i::before { margin:0 !important; }
+  nav.km-bottom .navbar-item.is-active { color: hsl(141, 53%, 53%) !important; background: transparent; }
+  @media (max-width: 1087px) { .navbar:not(.km-bottom) .navbar-brand > .navbar-item > span { display:none; } }
+  #toast { position:fixed; left:50%; bottom:5rem; transform:translateX(-50%); background:#000c; color:#fff; padding:.7rem 1.1rem; border-radius:1.2rem; display:none; z-index:50; max-width:90vw; text-align:center; }
+  .km-foot { text-align:center; font-size:.85rem; opacity:.8; padding:1rem; }
+  #ribbon { display:none; align-items:center; gap:.5rem; margin:.4rem 10px; padding:.25rem .8rem; border-radius:1rem; background:#0006; width:fit-content; font-size:.85rem; }
+  #ribbon i { width:.6rem; height:.6rem; border-radius:50%; background:#c3b94b; display:inline-block; }
+  .table-wrap { overflow-x:auto; }
+  table.km-table { table-layout:fixed; width:100%; }
+  table.km-table td, table.km-table th { vertical-align:middle; padding:.4em .35em; font-size:.85rem; overflow-wrap:anywhere; word-break:break-word; }
+  .km-res { display:flex; gap:.7rem; margin:.7rem 0; padding:.6rem; align-items:flex-start; flex-wrap:wrap; }
+  .km-thumb { position:relative; width:160px; max-width:100%; aspect-ratio:16/9; background:#111; border-radius:6px; overflow:hidden; flex:none; cursor:pointer; }
+  .km-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .km-thumb .play { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#fff; text-shadow:0 0 6px #000; opacity:.85; }
+  .km-thumb .dur { position:absolute; right:4px; bottom:4px; background:#000b; color:#fff; font-size:.7rem; padding:1px 5px; border-radius:3px; }
+  .km-info { flex:1; min-width:180px; overflow-wrap:anywhere; }
+  .km-btns { display:flex; flex-direction:column; gap:.4rem; min-width:9.5rem; }
+  .km-favbtn { min-width:46px; padding-left:.4em; padding-right:.4em; }
+  @media (max-width: 640px) {
+    .km-res { flex-direction:column; flex-wrap:nowrap; gap:.5rem; }
+    .km-thumb { width:100%; max-width:340px; }
+    .km-info { min-width:0; width:100%; }
+    .km-btns { flex-direction:row; width:100%; min-width:0; gap:.4rem; }
+    .km-btns .button { flex:1 1 0; min-width:0; white-space:nowrap; padding-left:.35em; padding-right:.35em; font-size:clamp(.7rem, 3.5vw, .95rem); }
+    .km-btns .km-favbtn { flex:0 0 46px; font-size:1.2rem; }
+  }
+  .km-modal { position:fixed; inset:0; z-index:90; background:#000d; display:none; align-items:center; justify-content:center; padding:12px; }
+  .km-modal .in { width:100%; max-width:720px; position:relative; }
+  .km-modal video, .km-modal iframe { width:100%; aspect-ratio:16/9; background:#000; border:0; }
+  .km-modal .x { position:absolute; right:0; top:-2.4rem; }
+  .km-song { padding:.75rem .8rem; margin:.55rem 0; }
+  .navbar:not(.km-bottom) .navbar-brand > .navbar-item > svg { width:1.25rem; height:1.25rem; margin-right:.5rem; }
+  .km-menurow { display:flex; gap:.5rem; }
+  .navbar-item.km-menurow, .navbar-item.km-menurow:hover { background:transparent !important; }
+  .km-pill { flex:1; text-align:center; padding:.5rem .6rem; border-radius:8px; background:rgba(255,255,255,.08); color:inherit; cursor:pointer; white-space:nowrap; }
+  .km-loader { display:flex; align-items:center; justify-content:center; gap:.7rem; padding:1rem 0; }
+  .km-loader img { width:3.2rem; height:auto; animation:km-spin 2.4s linear infinite; }
+  @keyframes km-spin { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .km-loader img { animation:none; } }
+  .km-credits { display:grid; grid-template-columns:max-content 1fr; gap:.2rem .9rem; opacity:.8; line-height:1.35; }
+  .km-credits dt { font-weight:700; }
+  .km-credits dd { margin:0; }
+  .km-pill:hover, .km-pill.is-active { background:rgba(255,255,255,.16); color:inherit; }
+  .km-note { font-size:.78rem; opacity:.7; margin:-.2rem 0 .8rem; }
+  .km-title { font-weight:600; overflow-wrap:anywhere; margin-bottom:.55rem; }
+  .km-arow { display:flex; gap:.5rem; align-items:stretch; }
+  .km-arow .button { min-height:46px; }
+  .km-arow .km-add { flex:1; min-width:0; }
+  .km-arow .km-ic { width:46px; padding:0; flex:none; }
+  .km-badge { position:absolute; left:4px; top:4px; background:#2d9d5c; color:#fff; font-size:.65rem; padding:1px 6px; border-radius:3px; font-weight:600; }
+  .km-qrow { display:flex; align-items:center; gap:.5rem; padding:.5rem .6rem; margin:.4rem 0; }
+  .km-handle { cursor:grab; touch-action:none; font-size:1.4rem; padding:0 .4rem; user-select:none; opacity:.8; flex:none; }
+  .km-ghost { opacity:.4; }
+  .km-scrub { width:100%; accent-color:#c3b94b; }
+  body.tv .navbar, body.tv nav.km-bottom, body.tv .km-foot, body.tv #ribbon { display:none !important; }
+  body.tv { padding-bottom: 1rem; font-size: 1.15rem; }
+  body.tv *:focus { outline: 4px solid #fff !important; outline-offset: 3px; }
+  .tv-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.7rem .9rem; margin:.35rem 0; border-radius:8px; background:#0003; }
+  .tv-row .lbl { flex:1; }
+  .tv-val { min-width:4.5rem; text-align:center; font-weight:700; }
+  .tv-row .button { min-width:3.2rem; min-height:3rem; }
+  .km-sheet .button { width:100%; justify-content:flex-start; margin-bottom:.5rem; min-height:48px; }
+</style>
+<script src="/static/sortable.min.js"></script>
+</head>
+<body>
+<div class="container" style="padding:5px; max-width:900px;">
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand" style="padding-left:10px">
+      <a class="navbar-item" data-tab="downloads"><i class="icon icon-down-circled" title="Downloads"></i><span>Downloads</span></a>
+      <a class="navbar-item" data-tab="browse"><i class="icon icon-music" title="Songs"></i><span>Songs</span></a>
+      <a class="navbar-item" data-tab="favs" title="Favourites"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><span>Favourites</span></a>
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" id="burger" tabindex="0"><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></a>
+    </div>
+    <div class="navbar-menu" id="menu">
+      <div class="navbar-end">
+        <a class="navbar-item is-hidden" id="current-user" data-tab="settings"><i class="icon icon-mic-1" title="Current user"></i><span></span></a>
+        <div class="navbar-item has-dropdown is-hoverable" id="dd">
+          <a class="navbar-link" id="ddlink" tabindex="0"><i class="icon icon-info-circled-1" title="DDKaraoke"></i><span>DDKaraoke</span></a>
+          <div class="navbar-dropdown is-right">
+            <a class="navbar-item" data-tab="rankings"><i class="icon icon-th-list-outline"></i>&nbsp;<span>Rankings</span></a>
+            <a class="navbar-item" data-tab="playlog"><i class="icon icon-list-alt"></i>&nbsp;<span>Play History</span></a>
+            <hr class="navbar-divider">
+            <div class="navbar-item km-menurow">
+              <a class="km-pill" href="https://ko-fi.com/kingarcher" target="_blank" rel="noopener">&#9749; Ko-fi</a>
+              <a class="km-pill" data-tab="settings"><i class="icon icon-cog"></i>&nbsp;Settings</a>
+            </div>
+            <div class="navbar-item km-menurow" id="foodrow" style="display:none">
+              <a class="km-pill" id="foodlink" href="https://doughbaybee.sg/" target="_blank" rel="noopener">&#127829; Order party food</a>
+            </div>
+            <a class="navbar-item" data-tab="about"><i class="icon icon-info"></i>&nbsp;<span>Disclaimer</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div id="ribbon"><i></i><span></span></div>
+  <div id="view"></div>
+  <div class="km-foot" id="promo" style="display:none;padding-bottom:0"></div>
+  <div class="km-foot">Enjoying the party? <a href="https://ko-fi.com/kingarcher" target="_blank" rel="noopener">Buy us a coffee &#9749;</a> Totally optional, thank you!</div>
+</div>
+
+<nav class="navbar km-bottom" role="navigation" aria-label="song extras">
+  <div class="navbar-brand">
+    <a class="navbar-item" data-tab="home" title="Home"><i class="icon icon-home-2"></i><span>Home</span></a>
+    <a class="navbar-item" data-tab="search" title="Add New"><i class="icon icon-plus-circled"></i><span>Add New</span></a>
+    <a class="navbar-item" data-tab="queue" title="Queue"><i class="icon icon-list-numbered"></i><span>Queue</span></a>
+    <a class="navbar-item" data-tab="interact" title="Interact with the TV">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 6.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm5 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm5 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg><span>Interact</span>
+    </a>
+    <a class="navbar-item" data-tab="history" title="My history"><i class="icon icon-list-alt"></i><span>My history</span></a>
+  </div>
+</nav>
+<div id="toast"></div>
+<div class="km-modal" id="modal"><div class="in"><button class="button is-small x" id="modalx">Close</button><div id="modalbody"></div><p class="notification is-danger is-light mt-2" id="modalerr" style="display:none">Preview unavailable for this song.</p></div></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+let tab = "home", songs = [], q = "";
+let isAdmin = false, prefs = {};
+const TV = location.hostname === "127.0.0.1";
+if (TV) document.body.classList.add("tv");
+let favs = store.get("favs", []).map((f) => typeof f === "string" ? { file: f, title: f.replace(/\.[^.]+$/, ""), remote: null } : f);
+let hist = store.get("hist", []), name = store.get("name", "");
+function isFav(file) { return favs.some((f) => f.file === file); }
+function remoteFromEntry(e) { return e.base === "youtube" ? { kind: "yt", id: e.kid, title: e.title, channel: "" } : { kind: "km", kid: e.kid, base: e.base }; }
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function toast(m) { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = "none", 3000); }
+function msg(t) { return el("p", "has-text-centered", t); }
+function fmtDur(s) { s = Math.round(s || 0); if (!s) return ""; return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+function dev() { let d = store.get("dev", ""); if (!d) { d = Array.from(crypto.getRandomValues(new Uint32Array(4))).join("-"); store.set("dev", d); } return d; }
+const NEEDS_NAME = /^\/api\/(cheer|overlay$|message)/;
+async function post(url, obj) {
+  if (!name && NEEDS_NAME.test(url)) { askName(); return { ok: false, error: "Please enter your name first." }; }
+  return await (await fetch(url, { method: "POST", body: JSON.stringify(Object.assign({ user: name, dev: dev() }, obj)) })).json();
+}
+
+// queue button state
+let queuedFiles = new Set(); const qBtns = [];
+function queueBtn(file, cls) {
+  const b = el("button", cls || "button is-primary km-add", "Add to queue");
+  qBtns.push({ b, file }); applyQueued({ b, file }); return b;
+}
+function applyQueued(r) {
+  const on = queuedFiles.has(r.file);
+  r.b.textContent = on ? "Song queued" : "Add to queue"; r.b.disabled = on; r.b.classList.toggle("is-light", on);
+}
+function syncQueued() { for (let i = qBtns.length - 1; i >= 0; i--) { if (!qBtns[i].b.isConnected) qBtns.splice(i, 1); else applyQueued(qBtns[i]); } }
+function markQueued(file) { queuedFiles.add(file); syncQueued(); }
+async function pollQueued() {
+  try { const j = await (await fetch("/api/queue", { cache: "no-store" })).json(); queuedFiles = new Set(j.queue.map((i) => i.file)); syncQueued(); } catch (e) {}
+  setTimeout(pollQueued, 3000);
+}
+pollQueued();
+
+// top bar
+$("#burger").onclick = () => { $("#burger").classList.toggle("is-active"); $("#menu").classList.toggle("is-active"); };
+$("#ddlink").onclick = () => { $("#dd").classList.toggle("is-active"); };
+function showName() { const c = $("#current-user"); c.classList.toggle("is-hidden", !name); c.querySelector("span").textContent = name; }
+async function refreshRibbon() {
+  try {
+    const j = await (await fetch("/api/queue")).json(); const r = $("#ribbon");
+    if (prefs.showSessionName !== false && j.session && j.session.name) { r.style.display = "flex"; r.querySelector("span").textContent = j.session.name; } else r.style.display = "none";
+  } catch (e) {}
+}
+function setTab(t) {
+  refreshRibbon(); tab = t; lastSig = null;
+  $("#menu").classList.remove("is-active"); $("#burger").classList.remove("is-active"); $("#dd").classList.remove("is-active");
+  document.querySelectorAll("[data-tab]").forEach((a) => a.classList.toggle("is-active", a.dataset.tab === t));
+  showName(); render();
+}
+document.querySelectorAll("[data-tab]").forEach((a) => {
+  a.tabIndex = 0; a.onclick = () => setTab(a.dataset.tab);
+  a.addEventListener("keydown", (e) => { if (e.key === "Enter") a.click(); });
+});
+
+// name prompt
+function askName() {
+  if (document.getElementById("nameGate")) return;
+  const ov = el("div"); ov.id = "nameGate";
+  ov.style.cssText = "position:fixed;inset:0;z-index:100;background:#000d;display:flex;align-items:center;justify-content:center;padding:16px";
+  const box = el("div", "box"); box.style.cssText = "max-width:420px;width:100%";
+  box.append(el("h1", "title is-4", "Welcome!"), el("p", "mb-3", "What should we call you? It shows next to the songs you pick. You can change it later in Settings."));
+  const inp = el("input", "input mb-3"); inp.maxLength = 24; inp.placeholder = "Your name"; inp.autocomplete = "off";
+  const b = el("button", "button is-primary is-fullwidth", "Submit"); const note = el("p", "is-size-7 has-text-warning mt-2");
+  const go = () => {
+    const v = inp.value.trim();
+    if (!v) { note.textContent = "Please type a name."; return; }
+    name = v; store.set("name", name); ov.remove(); showName(); render();
+  };
+  b.onclick = go; inp.addEventListener("keypress", (e) => { if (e.key === "Enter") go(); });
+  box.append(inp, b, note); ov.append(box); document.body.append(ov); setTimeout(() => inp.focus(), 50);
+}
+
+// songs on the box
+let libPage = 0, libQ = "";
+async function loadSongs() { try { songs = (await (await fetch("/api/songs?q=" + encodeURIComponent(q))).json()).songs; } catch (e) { songs = []; } }
+async function request(file, title) {
+  if (!name) { askName(); return false; }
+  const j = await (await fetch("/api/request", { method: "POST", body: new URLSearchParams({ singer: name, file }) })).json();
+  if (j.ok) { hist = [{ file, title, ts: Date.now() }].concat(hist.filter((h) => h.file !== file)).slice(0, 100); store.set("hist", hist); }
+  toast(j.ok ? "Added to the queue!" : (j.error || "Could not add that song."));
+  return !!j.ok;
+}
+function toggleFavQuiet(x) {
+  favs = isFav(x.file) ? favs.filter((f) => f.file !== x.file) : favs.concat({ file: x.file, title: x.title, remote: x.remote || null });
+  store.set("favs", favs);
+}
+function toggleFav(x) { toggleFavQuiet(x); render(); }
+async function keepSong(file, kept) { await post("/api/keep", { file, kept }); render(); }
+async function deleteSong(file, title) {
+  if (!confirm("Delete “" + title + "” from the box?")) return;
+  const r = await post("/api/songs/delete", { file }); toast(r.ok ? "Deleted." : (r.error || "Could not delete.")); render();
+}
+function songRow(x, opts) {
+  opts = opts || {};
+  const d = el("div", "box km-song");
+  d.append(el("div", "km-title", x.title));
+  if (x.sung) d.append(el("div", "is-size-7 has-text-success mb-2", "Sung " + fmtTime(x.ts)));
+  const row = el("div", "km-arow");
+  const add = queueBtn(x.file);
+  add.onclick = async () => {
+    const ok = (x.remote && !x.local) ? await addRemote(x.remote, true, add, { file: x.file, title: x.title }) : await request(x.file, x.title);
+    if (ok) markQueued(x.file);
+  };
+  row.append(add);
+  if (x.cached) {
+    const k = el("button", "button km-ic" + (x.kept ? " is-warning" : ""), x.kept ? "★" : "☆");
+    k.title = x.kept ? "Kept: this song will not be removed" : "Keep this song so it is not removed after it plays";
+    k.onclick = () => keepSong(x.file, !x.kept); row.append(k);
+  }
+  const h = el("button", "button km-ic km-heart" + (isFav(x.file) ? " is-on" : ""), isFav(x.file) ? "♥" : "♡");
+  h.title = "Favourite"; h.setAttribute("aria-label", "Favourite"); h.onclick = () => toggleFav(x); row.append(h);
+  if (opts.del && isAdmin) {
+    const del = el("button", "button km-ic is-danger is-light", "✕"); del.title = "Delete from the box"; del.setAttribute("aria-label", "Delete");
+    del.onclick = () => deleteSong(x.file, x.title); row.append(del);
+  }
+  d.append(row); return d;
+}
+function starNote() { return el("p", "km-note", "★ Keep: tap the star on a song to protect it, so it is never cleared to make room for new songs."); }
+function songRowFor(file, title) { return songRow(songs.find((s) => s.file === file) || { file, title }, {}); }
+
+// Home
+let scrub = null, scrubDragging = false;
+function fmtClock(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+async function updateScrub() {
+  if (tab === "home" && scrub && scrub.rng.isConnected && !scrubDragging) {
+    try {
+      const st = await (await fetch("/api/player", { cache: "no-store" })).json();
+      scrub.rng.max = Math.max(1, Math.floor(st.duration || 0)); scrub.rng.value = st.position || 0;
+      scrub.cur.textContent = fmtClock(st.position); scrub.tot.textContent = fmtClock(st.duration);
+    } catch (e) {}
+  }
+  setTimeout(updateScrub, 1000);
+}
+updateScrub();
+async function homeControls(card) {
+  const st = await (await fetch("/api/player")).json();
+  const box = el("div", "mt-4");
+  // scrubber
+  const sc = el("div", "mb-3");
+  const labs = el("div", "is-flex is-justify-content-space-between is-size-7"); const cur = el("span", "", fmtClock(st.position)); const tot = el("span", "", fmtClock(st.duration)); labs.append(cur, tot);
+  const rng = el("input", "km-scrub"); rng.type = "range"; rng.min = 0; rng.max = Math.max(1, Math.floor(st.duration || 0)); rng.value = st.position || 0; rng.step = 1;
+  rng.oninput = () => { scrubDragging = true; cur.textContent = fmtClock(rng.value); };
+  rng.onchange = async () => { await post("/api/seek", { to: +rng.value }); setTimeout(() => { scrubDragging = false; }, 800); };
+  sc.append(labs, rng); box.append(sc);
+  scrub = { rng, cur, tot };
+  const row1 = el("div", "buttons");
+  const vocals = el("button", "button " + (st.vocals.on ? "is-dark" : "is-warning"), st.vocals.on ? "🎤 Vocals: ON" : "🎤 Vocals: OFF");
+  vocals.onclick = async () => { await post("/api/vocals", { on: !st.vocals.on }); render(); };
+  const skip = el("button", "button is-danger is-light", "⏭ Skip");
+  skip.onclick = async () => { if (confirm("Skip this song?")) { await post("/api/skip", {}); setTimeout(render, 600); } };
+  const skipScore = el("button", "button is-dark", "⏩ Skip score");
+  skipScore.onclick = async () => { await post("/api/skipscore", {}); };
+  const styleNow = (st.style && st.style.mode) || "classic";
+  const style = el("button", "button is-dark", "Style: " + (styleNow === "classic" ? "Classic" : "Gentle"));
+  style.title = "Classic is the home server's method. Gentle keeps the bass, drums and wide sounds."
+;  style.onclick = async () => { await post("/api/vocalstyle", { mode: styleNow === "classic" ? "gentle" : "classic" }); render(); };
+  if (isAdmin) row1.append(vocals, style, skip, skipScore); else row1.append(vocals, style);
+  box.append(row1);
+  if (st.mono) box.append(el("p", "is-size-7 has-text-warning mb-3", "This recording is the same in both ears, so the singing can't be fully taken out. Vocals OFF only turns the voice range down."));
+  const row2 = el("div", "buttons");
+  const down = el("button", "button is-dark", "♭ Key −"), up = el("button", "button is-dark", "♯ Key +");
+  const keyLabel = el("span", "button is-static", "Key " + (st.key.semitones > 0 ? "+" : "") + st.key.semitones);
+  down.onclick = async () => { await post("/api/key", { delta: -1 }); render(); };
+  up.onclick = async () => { await post("/api/key", { delta: 1 }); render(); };
+  row2.append(down, keyLabel, up);
+  const row3 = el("div", "buttons");
+  [["⏪ 30s", -30], ["◀ 10s", -10], ["10s ▶", 10], ["30s ⏩", 30]].forEach(([lab, by]) => {
+    const b = el("button", "button is-dark", lab); b.onclick = () => post("/api/seek", { by }); row3.append(b);
+  });
+  const restart = el("button", "button is-dark", "⏮ Restart"); restart.onclick = () => post("/api/seek", { to: 0 }); row3.append(restart);
+  box.append(row2, row3); card.append(box);
+}
+
+// Songs available
+async function renderBrowse(card) {
+  const per = prefs.songsPerPage || 50;
+  card.append(el("h1", "title", "Songs available"));
+  card.append(starNote());
+  const f = el("div", "field"); const c = el("div", "control"); const inp = el("input", "input"); inp.placeholder = "Search the songs on this box"; inp.value = libQ;
+  inp.addEventListener("keypress", (e) => { if (e.key === "Enter") { libQ = inp.value.trim(); libPage = 0; render(); } });
+  c.append(inp); f.append(c); card.append(f);
+  const j = await (await fetch("/api/songs?per=" + per + "&page=" + libPage + "&q=" + encodeURIComponent(libQ))).json();
+  songs = j.songs;
+  if (!songs.length) card.append(msg(libQ ? "No songs match." : "No songs on this box yet. Use Add New to get some."));
+  songs.forEach((x) => card.append(songRow(x, { del: true })));
+  const pages = Math.max(1, Math.ceil(j.total / per));
+  const nav = el("div", "buttons is-centered mt-3");
+  const prev = el("button", "button is-dark", "◀ Prev"); prev.disabled = libPage <= 0; prev.onclick = () => { libPage--; render(); };
+  const next = el("button", "button is-dark", "Next ▶"); next.disabled = libPage + 1 >= pages; next.onclick = () => { libPage++; render(); };
+  nav.append(prev, el("span", "button is-static", "Page " + (libPage + 1) + " of " + pages + " · " + j.total + " songs"), next);
+  card.append(nav);
+}
+
+// Downloads
+async function renderDownloads(card) {
+  card.append(el("h1", "title", "Downloads"));
+  const j = await (await fetch("/api/downloads")).json();
+  if (!j.items.length) card.append(msg("No downloads right now. Songs download when they are nearly your turn, or when you tap Save for later."));
+  j.items.forEach((i) => {
+    const d = el("div", "box km-row"); const t = el("div", "km-t");
+    t.append(el("div", "", i.title));
+    const label = i.state === "downloading" ? "Downloading " + i.percent + "%" : i.state === "waiting" ? "Waiting to download" : i.state === "done" ? "Done" + (i.keep ? " (saved)" : "") : i.state === "error" ? "Problem: " + i.message : i.state;
+    t.append(el("div", "is-size-7 has-text-grey-light", label + (i.sizeMb ? " · " + i.sizeMb + " MB" : "")));
+    if (i.state === "downloading") { const p = el("progress", "progress is-info is-small mt-1"); p.max = 100; p.value = i.percent; t.append(p); }
+    d.append(t); card.append(d);
+  });
+}
+
+// Add New
+let srcTab = store.get("srcTab", "yt"), sq = "", nonKaraoke = false, ytState = null, cdState = null;
+function openModal(node, onerr) {
+  const body = $("#modalbody"); body.textContent = ""; body.append(node); $("#modalerr").style.display = "none";
+  $("#modal").style.display = "flex"; if (onerr) node.addEventListener("error", () => { $("#modalerr").style.display = "block"; });
+}
+function closeModal() { const b = $("#modalbody"); b.querySelectorAll("video").forEach((v) => v.pause()); b.textContent = ""; $("#modal").style.display = "none"; }
+$("#modalx").onclick = closeModal; $("#modal").onclick = (e) => { if (e.target.id === "modal") closeModal(); };
+
+async function addRemote(body, queueIt, btn, info) {
+  if (queueIt && !name) { askName(); return false; }
+  btn.disabled = true;
+  let r;
+  try { r = await (await fetch("/api/request-remote", { method: "POST", body: JSON.stringify(Object.assign({ queue: queueIt, singer: name }, body)) })).json(); } catch (e) { r = { ok: false, error: "Couldn't reach the box." }; }
+  btn.disabled = false;
+  if (!r.ok) { toast(r.error || "Could not add that song."); return false; }
+  toast(queueIt ? "Added to the queue! It downloads as your turn gets close." : "Saving it for later. See the Downloads page.");
+  if (queueIt && info) { hist = [{ file: info.file, title: info.title, ts: Date.now(), remote: body }].concat(hist.filter((h) => h.file !== info.file)).slice(0, 150); store.set("hist", hist); }
+  return true;
+}
+function resultCard(o) {
+  const d = el("div", "box km-res");
+  const th = el("div", "km-thumb");
+  if (o.thumb) { const img = el("img"); img.loading = "lazy"; img.alt = ""; img.src = o.thumb; img.onerror = () => { img.remove(); }; th.append(img); }
+  th.append(el("div", "play", "▶"));
+  if (o.onBox) th.append(el("div", "km-badge", "In library"));
+  if (o.seconds) th.append(el("div", "dur", fmtDur(o.seconds)));
+  th.onclick = o.preview;
+  const info = el("div", "km-info"); info.append(el("div", "has-text-weight-semibold", o.title));
+  if (o.sub) info.append(el("div", "is-size-7 has-text-grey-light", o.sub));
+  if (o.tags && o.tags.length) { const tg = el("div", "tags mt-1 mb-1"); o.tags.forEach((t) => tg.append(el("span", "tag is-info is-light", t))); info.append(tg); }
+  if (o.link) { const a = el("a", "is-size-7", o.linkText || "Open ↗"); a.href = o.link; a.target = "_blank"; a.rel = "noopener"; info.append(a); }
+  const btns = el("div", "km-btns");
+  const add = queueBtn(o.file, "button is-primary");
+  const showFav = (b) => { b.textContent = isFav(o.file) ? "♥" : "♡"; b.style.color = isFav(o.file) ? "#ff5a7a" : ""; b.title = "Favourite"; b.setAttribute("aria-label", "Favourite"); };
+  const fav = el("button", "button is-dark km-favbtn"); showFav(fav);
+  fav.onclick = () => { toggleFavQuiet({ file: o.file, title: o.title, remote: o.remote }); showFav(fav); };
+  add.onclick = async () => { const ok = await o.add(true, add); if (ok) markQueued(o.file); };
+  btns.append(add);
+  if (!o.onBox) { const later = el("button", "button is-dark", "Save for later"); later.onclick = () => o.add(false, later); btns.append(later); }
+  btns.append(fav);
+  d.append(th, info, btns); return d;
+}
+function ytSearch(token) {
+  const url = "/api/youtube/search?q=" + encodeURIComponent(sq) + "&karaoke=" + (nonKaraoke ? 0 : 1) + (token ? "&token=" + encodeURIComponent(token) : "");
+  if (!token) ytState = { items: [], next: null, busy: false, error: "", q: sq };
+  const st = ytState; st.busy = true; st.error = ""; render();
+  fetch(url).then((r) => r.json()).then((j) => { st.busy = false; if (!j.ok) st.error = j.error; else { st.items = st.items.concat(j.results); st.next = j.next; } render(); }).catch(() => { st.busy = false; st.error = "Couldn't search right now."; render(); });
+}
+function cdSearch(more) {
+  if (!more) cdState = { items: [], more: false, next: 0, busy: false, error: "", q: sq, none: false };
+  const st = cdState; st.busy = true; st.error = ""; render();
+  fetch("/api/sources/search?q=" + encodeURIComponent(sq) + "&from=" + (more ? st.next : 0)).then((r) => r.json()).then((j) => {
+    st.busy = false;
+    if (!j.ok) st.error = j.error; else { st.none = !!j.noSources; st.items = st.items.concat(j.results); st.more = !!j.more; st.next = j.next || 0; }
+    render();
+  }).catch(() => { st.busy = false; st.error = "Couldn't search right now."; render(); });
+}
+function doSearch() {
+  if (sq.length < 2) { toast("Type at least 2 letters."); return; }
+  ytSearch(null); cdSearch(false);      // search both so switching tabs is instant
+}
+async function renderSearch(card) {
+  card.append(el("h1", "title", "Add New"));
+  card.append(el("p", "subtitle is-6", "Add new songs from YouTube or the Community Databases"));
+  const f = el("div", "field has-addons"); const c = el("div", "control is-expanded"); const inp = el("input", "input"); inp.placeholder = "Search for a song"; inp.value = sq; inp.id = "sbox";
+  inp.addEventListener("input", () => { sq = inp.value.trim(); });
+  inp.addEventListener("keypress", (e) => { if (e.key === "Enter") { sq = inp.value.trim(); doSearch(); } });
+  c.append(inp); const c2 = el("div", "control"); const go = el("button", "button is-info", "Search"); go.onclick = () => { sq = inp.value.trim(); doSearch(); }; c2.append(go); f.append(c, c2); card.append(f);
+  const opts = el("div", "is-flex is-justify-content-space-between mb-3");
+  const lab = el("label", "checkbox is-size-7"); const cb = el("input"); cb.type = "checkbox"; cb.checked = nonKaraoke; cb.onchange = () => { nonKaraoke = cb.checked; };
+  lab.append(cb, document.createTextNode(" Include non-karaoke matches"));
+  const clear = el("a", "is-size-7 has-text-danger", "Clear"); clear.onclick = () => { sq = ""; ytState = null; cdState = null; render(); };
+  opts.append(lab, clear); card.append(opts);
+  const tabs = el("div", "tabs is-toggle is-fullwidth is-small mb-3"); const ul = el("ul");
+  [["yt", "YouTube"], ["cd", "Community Database"]].forEach(([k, label]) => {
+    const li = el("li", srcTab === k ? "is-active" : ""); const a = el("a", "", label); a.onclick = () => { srcTab = k; store.set("srcTab", k); render(); }; li.append(a); ul.append(li);
+  });
+  tabs.append(ul); card.append(tabs);
+  const out = el("div"); card.append(out);
+  const st = srcTab === "yt" ? ytState : cdState;
+  if (!st) { out.append(el("p", "has-text-grey has-text-centered", "Type a song and press Search.")); return; }
+  if (st.busy && !st.items.length) { out.append(loader("Searching...")); return; }
+  if (st.error) out.append(el("p", "has-text-warning has-text-centered", st.error));
+  if (srcTab === "cd" && st.none) { out.append(el("p", "has-text-grey has-text-centered", "No song databases yet. The host can add one in Settings.")); return; }
+  out.append(el("p", "is-size-7 has-text-grey mb-2", "Search results for ‘" + st.q + "’"));
+  if (!st.items.length && !st.busy && !st.error) out.append(msg("Nothing found."));
+  st.items.forEach((r) => {
+    if (srcTab === "yt") {
+      out.append(resultCard({
+        file: r.file, title: r.title, sub: r.channel, thumb: r.thumb, seconds: r.seconds, onBox: r.onBox, remote: { kind: "yt", id: r.id, title: r.title, channel: r.channel },
+        link: "https://www.youtube.com/watch?v=" + r.id, linkText: "YouTube ↗",
+        preview: () => { const fr = el("iframe"); fr.src = "https://www.youtube-nocookie.com/embed/" + r.id + "?autoplay=1"; fr.allow = "autoplay; encrypted-media"; fr.allowFullscreen = true; openModal(fr); },
+        add: (queueIt, btn) => addRemote({ kind: "yt", id: r.id, title: r.title, channel: r.channel }, queueIt, btn, { file: r.file, title: r.title }),
+      }));
+    } else {
+      const sub = [r.series, r.type, r.singers, r.sizeMb ? r.sizeMb + " MB" : "", r.source].filter(Boolean).join(" · ");
+      out.append(resultCard({
+        file: r.file, title: r.title, sub, thumb: r.thumb, seconds: r.seconds, onBox: r.onBox, tags: r.tags, remote: { kind: "km", kid: r.kid, base: r.base },
+        preview: () => { const v = el("video"); v.controls = true; v.autoplay = true; v.playsInline = true; v.src = r.base + "/api/karas/" + encodeURIComponent(r.kid) + "/hardsub"; openModal(v, true); },
+        add: (queueIt, btn) => addRemote({ kind: "km", kid: r.kid, base: r.base }, queueIt, btn, { file: r.file, title: r.title }),
+      }));
+    }
+  });
+  if (st.busy) out.append(loader("Loading..."));
+  else if ((srcTab === "yt" && st.next) || (srcTab === "cd" && st.more)) {
+    const more = el("button", "button is-dark is-fullwidth mt-3", "Show more results"); more.onclick = () => { if (srcTab === "yt") ytSearch(st.next); else cdSearch(true); }; out.append(more);
+  }
+}
+
+// Interact
+const COLORS = [["white","#fff"],["red","#f00"],["pink","#ff8080"],["orange","#fc0"],["yellow","#ff0"],["green","#0f0"],["cyan","#0ff"],["blue","#00f"],["purple","#c000ff"],["black","#000"]];
+let msgOpts = { color: "white", size: "medium" };
+function addForm(kind) {
+  const f = el("div", "box p-3 has-background-dark mt-2");
+  f.append(el("div", "is-size-7 has-text-grey mb-2", kind === "sound"
+    ? "Host: add a sound from a myinstants.com page link (or a direct .mp3 link)"
+    : "Host: add a green-screen clip. Paste a direct link to a short .mp4 or .webm file (the first 8 seconds are used, and the green is removed on the TV). YouTube links can't be used on the TV box."));
+  const row = el("div", "field has-addons mb-2"); const ce = el("div", "control"); const ie = el("input", "input"); ie.placeholder = "😀"; ie.maxLength = 8; ie.style.width = "4em"; ce.append(ie);
+  const ct = el("div", "control is-expanded"); const it = el("input", "input"); it.placeholder = "Title"; it.maxLength = 24; ct.append(it); row.append(ce, ct);
+  const iu = el("input", "input mb-2"); iu.placeholder = kind === "sound" ? "https://www.myinstants.com/en/instant/..." : "https://.../clip.webm";
+  f.append(row, iu);
+  let sel = null;
+  if (kind === "clip") {
+    const ps = el("div", "select is-small mb-2"); sel = el("select");
+    [["full", "Full screen"], ["corner", "Bottom corner"], ["random", "Random spot"]].forEach(([v, t]) => { const op = el("option", "", t); op.value = v; sel.append(op); });
+    ps.append(sel); f.append(ps, el("br"));
+  }
+  const go = el("button", "button is-info is-small", kind === "sound" ? "Add sound" : "Add clip"); const fn = el("p", "is-size-7 has-text-grey mt-1");
+  go.onclick = async () => {
+    go.disabled = true; fn.textContent = "Downloading...";
+    const body = { emoji: ie.value, label: it.value, url: iu.value }; if (sel) body.placement = sel.value;
+    const r = await post(kind === "sound" ? "/api/cheers/add" : "/api/overlays/add", body);
+    go.disabled = false; fn.textContent = r.ok ? "Added!" : r.error; if (r.ok) render();
+  };
+  f.append(go, fn); return f;
+}
+async function renderInteract(card) {
+  card.append(el("h1", "title", "Interact"));
+  card.append(el("h2", "title is-5 mb-1", "Cheer"));
+  card.append(el("p", "is-size-7 has-text-grey mb-2", "Plays a sound on the TV, and your name floats up the screen."));
+  const grid = el("div", "buttons"); const cnote = el("p", "is-size-7 has-text-grey");
+  card.append(grid, cnote);
+  (await (await fetch("/api/cheers")).json()).cheers.forEach((c) => {
+    const x = el("button", "button is-dark", c.emoji + " " + c.label); x.style.fontSize = "1rem";
+    if (c.special) x.classList.add("is-warning", "is-light");
+    x.onclick = async () => { x.disabled = true; const r = await post("/api/cheer", { key: c.key }); cnote.textContent = r.ok ? c.emoji + " sent!" : r.error; setTimeout(() => { x.disabled = false; }, c.special ? 5000 : 3000); };
+    if (isAdmin && !c.special) {
+      const wrap = el("div"); wrap.style.cssText = "position:relative;display:inline-block;margin:0 .5rem .5rem 0"; x.style.margin = "0";
+      const del = el("button", "delete is-small"); del.title = "Remove this sound"; del.style.cssText = "position:absolute;top:-6px;right:-6px;z-index:2";
+      del.onclick = async (ev) => { ev.stopPropagation(); if (!confirm("Remove " + c.emoji + " " + c.label + " from the board?")) return; const r = await post("/api/cheers/remove", { key: c.key }); cnote.textContent = r.ok ? "Removed." : r.error; render(); };
+      wrap.append(x, del); grid.append(wrap);
+    } else grid.append(x);
+  });
+  if (isAdmin) card.append(addForm("sound"));
+  card.append(el("h2", "title is-5 mb-1 mt-4", "Overlay clips 🎬"));
+  card.append(el("p", "is-size-7 has-text-grey mb-2", "Green-screen clips that play over the karaoke video on the TV. One at a time."));
+  const ogrid = el("div", "buttons"); const onote = el("p", "is-size-7 has-text-grey"); card.append(ogrid, onote);
+  const ovs = (await (await fetch("/api/overlays")).json()).overlays;
+  if (!ovs.length) ogrid.append(el("span", "is-size-7 has-text-grey", "No clips yet."));
+  ovs.forEach((o) => {
+    const x = el("button", "button is-dark", "🎬 " + o.emoji + " " + o.label); x.style.fontSize = "1rem";
+    x.onclick = async () => { x.disabled = true; const r = await post("/api/overlay", { key: o.key }); onote.textContent = r.ok ? o.emoji + " on the TV!" : r.error; setTimeout(() => { x.disabled = false; }, r.ok ? 10000 : 3000); };
+    if (isAdmin) {
+      const wrap = el("div"); wrap.style.cssText = "position:relative;display:inline-block;margin:0 .5rem .5rem 0"; x.style.margin = "0";
+      const del = el("button", "delete is-small"); del.title = "Remove this clip"; del.style.cssText = "position:absolute;top:-6px;right:-6px;z-index:2";
+      del.onclick = async (ev) => { ev.stopPropagation(); if (!confirm("Remove " + o.emoji + " " + o.label + "?")) return; const r = await post("/api/overlays/remove", { key: o.key }); onote.textContent = r.ok ? "Removed." : r.error; render(); };
+      wrap.append(x, del); ogrid.append(wrap);
+    } else ogrid.append(x);
+  });
+  if (isAdmin) card.append(addForm("clip"));
+  card.append(el("hr", "my-4")); card.append(el("h2", "title is-5 mb-1", "Messages"));
+  card.append(el("p", "is-size-7 has-text-grey mb-3", "Your comment streams across the TV screen, Niconico style. Be nice!"));
+  const f = el("div", "field has-addons"); const c1 = el("div", "control is-expanded"); const inp = el("input", "input");
+  inp.maxLength = 80; inp.placeholder = "Comment..."; c1.append(inp);
+  const c2 = el("div", "control"); const b = el("button", "button is-info", "Send"); c2.append(b); f.append(c1, c2); card.append(f);
+  function group(title, key, items) {
+    const w = el("div", "mb-3"); w.append(el("div", "is-size-7 has-text-grey mb-1", title)); const bs = el("div", "buttons are-small");
+    items.forEach(([val, lab, css]) => {
+      const x = el("button", "button" + (msgOpts[key] === val ? " is-info" : ""), lab); if (css) x.style.cssText = css;
+      x.onclick = () => { msgOpts[key] = val; bs.querySelectorAll("button").forEach((y) => y.classList.remove("is-info")); x.classList.add("is-info"); };
+      bs.append(x);
+    });
+    w.append(bs); card.append(w);
+  }
+  group("Colour", "color", COLORS.map(([n, c]) => [n, "", "min-width:2.2em;background:" + c + ";border:2px solid #555"]));
+  group("Size", "size", [["small", "Small"], ["medium", "Normal"], ["big", "Big"]]);
+  const note = el("p", "is-size-7 has-text-grey"); card.append(note);
+  async function send() {
+    if (!inp.value.trim()) return; b.disabled = true;
+    const r = await post("/api/message", { text: inp.value, color: msgOpts.color, size: msgOpts.size });
+    b.disabled = false; if (r.ok) { inp.value = ""; note.textContent = "Sent! Look at the TV."; } else note.textContent = r.error;
+  }
+  b.onclick = send; inp.addEventListener("keypress", (e) => { if (e.key === "Enter") send(); });
+}
+
+let qBusy = false;
+function queueMenu(it, i, n) {
+  const sheet = el("div", "box km-sheet");
+  sheet.append(el("p", "has-text-weight-semibold mb-3", it.title));
+  const act = (label, action) => { const b = el("button", "button is-dark", label); b.onclick = async () => { closeModal(); const r = await post("/api/queue/move", { id: it.id, action }); if (!r.ok) toast(r.error); render(); }; sheet.append(b); };
+  if (i > 0) act("⏫  Play next (move to top)", "top");
+  if (i > 0) act("⬆  Move up", "up");
+  if (i < n - 1) act("⬇  Move down", "down");
+  if (i < n - 1) act("⏬  Move to bottom", "bottom");
+  if (isAdmin) { const rm = el("button", "button is-danger is-light", "✕  Remove from the queue"); rm.onclick = async () => { closeModal(); await post("/api/queue/remove", { id: it.id }); render(); }; sheet.append(rm); }
+  openModal(sheet);
+}
+
+// Rankings and Play History
+let sessionsList = [], sessSel = "all", rankLimit = 10, hideSkipped = false;
+async function loadSessions() { try { sessionsList = (await (await fetch("/api/sessions")).json()).sessions; } catch (e) { sessionsList = []; } }
+function sessionPicker(onchange) {
+  const w = el("div", "field is-horizontal mb-3"); const lab = el("label", "label mr-2 mt-2 is-size-7", "Session");
+  const c = el("div", "select is-small"); const sel = el("select"); sessionsList.slice().reverse().forEach((x) => { const o = el("option", "", x.name); o.value = x.id; sel.append(o); });
+  const all = el("option", "", "All sessions"); all.value = "all"; sel.prepend(all); sel.value = sessSel;
+  sel.onchange = () => { sessSel = sel.value; onchange(); };
+  c.append(sel); w.append(lab, c); return w;
+}
+function sizePicker(onchange) {
+  const w = el("div", "field is-horizontal mb-3"); const lab = el("label", "label mr-2 mt-2 is-size-7", "Show");
+  const c = el("div", "select is-small"); const sel = el("select"); [10, 20, 50, 100].forEach((n) => { const o = el("option", "", String(n)); o.value = n; sel.append(o); });
+  sel.value = String(rankLimit); sel.onchange = () => { rankLimit = parseInt(sel.value, 10); onchange(); };
+  c.append(sel); w.append(lab, c); return w;
+}
+function table(heads, widths) {
+  const wrap = el("div", "table-wrap"); const t = el("table", "table is-fullwidth km-table");
+  const cg = el("colgroup"); widths.forEach((w) => { const c = el("col"); c.style.width = w; cg.append(c); }); t.append(cg);
+  const th = el("thead"); const hr = el("tr"); heads.forEach((h) => hr.append(el("th", "", h))); th.append(hr); t.append(th);
+  const tb = el("tbody"); t.append(tb); wrap.append(t); return { wrap, tb };
+}
+function rankTable(rows, nameHead, playsHead) {
+  const T = table(["Rank", nameHead, playsHead], ["3.2rem", "auto", "3.6rem"]);
+  if (!rows.length) { const r = el("tr"); const td = el("td", "has-text-grey", "Nothing played yet."); td.colSpan = 3; r.append(td); T.tb.append(r); }
+  rows.forEach((x) => { const r = el("tr"); r.append(el("td", "", String(x.rank)), el("td", "", x.name), el("td", "", String(x.plays))); T.tb.append(r); });
+  return T.wrap;
+}
+async function renderRankings(card) {
+  await loadSessions();
+  card.append(el("h1", "title", "Rankings"));
+  card.append(sessionPicker(() => render()));
+  const j = await (await fetch("/api/rankings?session=" + encodeURIComponent(sessSel) + "&limit=" + rankLimit)).json();
+  card.append(el("h2", "title is-4", "Top songs")); card.append(rankTable(j.songs, "Song", "Plays")); card.append(sizePicker(() => render()));
+  card.append(el("h2", "title is-4 mt-4", "Top performers")); card.append(rankTable(j.performers, "Performer", "Plays"));
+}
+function fmtTime(ms) {
+  const d = new Date(ms), now = new Date();
+  if (d.toDateString() === now.toDateString()) return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+async function requeue(e) {
+  if (!name) { askName(); return; }
+  if (!confirm("Add “" + e.title + "” to the queue as " + name + "?")) return;
+  let j;
+  if (e.kid && e.base) j = await (await fetch("/api/request-remote", { method: "POST", body: JSON.stringify(Object.assign(remoteFromEntry(e), { singer: name, queue: true })) })).json();
+  else j = await (await fetch("/api/request", { method: "POST", body: new URLSearchParams({ singer: name, file: e.file }) })).json();
+  toast(j.ok ? "Added to the queue!" : (j.error || "That song is not available any more."));
+}
+async function renderPlayLog(card) {
+  await loadSessions();
+  card.append(el("h1", "title", "Play History"));
+  card.append(sessionPicker(() => render()));
+  const hs = el("label", "checkbox is-size-7 mb-3"); const cb = el("input"); cb.type = "checkbox"; cb.checked = hideSkipped;
+  cb.onchange = () => { hideSkipped = cb.checked; render(); }; hs.append(cb, document.createTextNode(" Hide skipped")); card.append(hs);
+  const j = await (await fetch("/api/history?session=" + encodeURIComponent(sessSel))).json();
+  const rows = j.entries.filter((e) => !(hideSkipped && e.status === "skipped"));
+  const T = table(["Played", "Performer", "Song", "Status", ""], ["3.6rem", "5.5rem", "auto", "3.2rem", "2.8rem"]);
+  if (!rows.length) { const r = el("tr"); const td = el("td", "has-text-grey", "Nothing played yet."); td.colSpan = 5; r.append(td); T.tb.append(r); }
+  rows.forEach((e) => {
+    const r = el("tr");
+    const st = el("td", e.status === "skipped" ? "has-text-warning" : "has-text-success", e.status === "skipped" ? "⏭" : "✔"); st.title = e.status;
+    const g = el("td"); const gb = el("button", "button is-small is-dark", "⚙"); gb.title = "Add to the queue again"; gb.onclick = () => requeue(e); g.append(gb);
+    r.append(el("td", "", fmtTime(e.at)), el("td", "", e.singer), el("td", "", e.title), st, g); T.tb.append(r);
+  });
+  card.append(T.wrap);
+}
+
+// Settings
+function section(card, title) { card.append(el("h2", "title is-5 mb-2 mt-5", title)); }
+function checkRow(card, label, checked) {
+  const l = el("label", "checkbox is-block mb-2"); const c = el("input"); c.type = "checkbox"; c.checked = checked; l.append(c, document.createTextNode(" " + label)); card.append(l); return c;
+}
+function numRow(card, label, value, min, max) {
+  const w = el("div", "field mb-3"); w.append(el("label", "label is-size-7", label));
+  const i = el("input", "input"); i.type = "number"; i.min = min; i.max = max; i.value = value; i.style.maxWidth = "9em"; w.append(i); card.append(w); return i;
+}
+// TV settings: remote friendly (up/down/OK only), so no text boxes.
+async function tvSave(partial) { try { await fetch("/api/prefs", { method: "POST", body: JSON.stringify(partial) }); Object.assign(prefs, partial); } catch (e) {} }
+function tvToggle(card, label, key, value) {
+  const r = el("label", "tv-row"); r.append(el("span", "lbl", label));
+  const c = el("input"); c.type = "checkbox"; c.checked = !!value; c.style.cssText = "width:1.8rem;height:1.8rem";
+  c.onchange = () => tvSave({ [key]: c.checked }); r.append(c); card.append(r); return c;
+}
+function tvStep(card, label, value, min, max, step, onSet, suffix) {
+  const r = el("div", "tv-row"); r.append(el("span", "lbl", label));
+  const minus = el("button", "button is-dark", "−"), plus = el("button", "button is-dark", "+"), val = el("span", "tv-val", String(value) + (suffix || ""));
+  let cur = value;
+  const set = (v) => { cur = Math.max(min, Math.min(max, v)); val.textContent = cur + (suffix || ""); onSet(cur); };
+  minus.onclick = () => set(cur - step); plus.onclick = () => set(cur + step);
+  r.append(minus, val, plus); card.append(r);
+}
+function tvPress(card, label, cls, action) {
+  const b = el("button", "button " + cls, label); b.style.cssText = "min-height:3.2rem;margin:.35rem 0;display:block;width:100%";
+  let armed = false;
+  b.onclick = () => { if (!armed) { armed = true; const old = b.textContent; b.textContent = "Press again to confirm"; setTimeout(() => { armed = false; b.textContent = old; }, 4000); } else { armed = false; action(); } };
+  card.append(b); return b;
+}
+async function renderSettingsTV(card, st, P) {
+  const top = el("div", "tv-row"); top.append(el("h1", "title mb-0", "Settings"));
+  const close = el("button", "button is-info", "Close"); close.onclick = () => post("/api/closesettings", {}); top.append(close); card.append(top);
+  card.append(el("p", "is-size-7 has-text-grey mb-3", "Use up and down to move, OK to change. Text (names, PIN, song sources, score phrases) is edited from a phone."));
+  card.append(el("h2", "title is-5 mb-1", "Host PIN"));
+  const pinRow = el("div", "tv-row"); const pinTxt = el("span", "title is-2 has-text-warning mb-0", "****"); pinRow.append(pinTxt);
+  const pinBtn = el("button", "button is-dark", "Show PIN"); let pinTimer = null;
+  const hidePin = () => { pinTxt.textContent = "****"; pinBtn.textContent = "Show PIN"; clearTimeout(pinTimer); };
+  pinBtn.onclick = () => { if (pinTxt.textContent === "****") { pinTxt.textContent = st.pin || ""; pinBtn.textContent = "Hide PIN"; pinTimer = setTimeout(hidePin, 15000); } else hidePin(); };
+  pinRow.append(pinBtn); card.append(pinRow);
+  card.append(el("h2", "title is-5 mt-4 mb-1", "Splash screen"));
+  tvToggle(card, "Disable background video", "disableBgVideo", P.disableBgVideo);
+  tvToggle(card, "Disable background music", "disableBgMusic", P.disableBgMusic);
+  tvToggle(card, "Show the score screen after each song", "scoreEnabled", P.scoreEnabled);
+  tvToggle(card, "Show splash clock", "showClock", P.showClock);
+  tvToggle(card, "Hide the URL and QR code", "hideQr", P.hideQr);
+  tvToggle(card, "Show the session name on phones", "showSessionName", P.showSessionName);
+  tvToggle(card, "Notice on the TV when someone queues a song", "showQueueNotices", P.showQueueNotices);
+  tvToggle(card, "Party food suggestion (Singapore only)", "showPromo", P.showPromo);
+  tvToggle(card, "Remove songs from the box after they play", "deleteAfterPlay", P.deleteAfterPlay);
+  tvStep(card, "Video volume", P.videoVolume, 0, 100, 5, (v) => tvSave({ videoVolume: v }), "%");
+  tvStep(card, "Background music volume", P.bgMusicVolume, 0, 100, 5, (v) => tvSave({ bgMusicVolume: v }), "%");
+  tvStep(card, "Seconds before the next song", P.nextDelay, 0, 60, 1, (v) => tvSave({ nextDelay: v }), "s");
+  card.append(el("h2", "title is-5 mt-4 mb-1", "Colours"));
+  const sw = el("div", "tv-row"); sw.append(el("span", "lbl", "Accent colour"));
+  ["#c3b94b", "#e8c592", "#ff8c00", "#4ba3c3", "#c34b8a", "#6dc34b"].forEach((c) => {
+    const b = el("button", "button", "●"); b.style.cssText = "color:" + c + ";font-size:1.6rem;min-width:3.2rem"; b.title = c;
+    b.onclick = () => { tvSave({ accent: c }); sw.querySelectorAll("button").forEach((x) => x.style.outline = ""); b.style.outline = "3px solid " + c; };
+    if (c === P.accent) b.style.outline = "3px solid " + c; sw.append(b);
+  });
+  card.append(sw);
+  tvStep(card, "Background colour", P.bgHue, 0, 360, 15, (v) => tvSave({ bgHue: v }));
+  tvStep(card, "Colour strength", P.bgSat, 0, 300, 15, (v) => tvSave({ bgSat: v }));
+  tvStep(card, "Brightness", P.bgBright, 0, 200, 5, (v) => tvSave({ bgBright: v }));
+  card.append(el("h2", "title is-5 mt-4 mb-1", "Queue"));
+  tvToggle(card, "Fair queue: singers take turns", "fairQueue", P.fairQueue);
+  tvStep(card, "Songs one person may queue (0 = no limit)", P.limitPerPerson, 0, 50, 1, (v) => tvSave({ limitPerPerson: v }));
+  card.append(el("h2", "title is-5 mt-4 mb-1", "Where songs are stored"));
+  card.append(el("p", "is-size-7 has-text-grey mb-2", st.songCount + " songs. Plugged in a drive just now? Close and reopen the app."));
+  st.options.forEach((o) => {
+    const r = el("label", "tv-row"); const radio = el("input"); radio.type = "radio"; radio.name = "place"; radio.checked = o.path === st.folder; radio.style.cssText = "width:1.8rem;height:1.8rem";
+    radio.onchange = () => fetch("/api/settings", { method: "POST", body: JSON.stringify({ folder: o.path }) });
+    const t = el("span", "lbl"); t.append(el("div", "", o.label + ": " + o.freeGb + " GB free of " + o.totalGb + " GB"), el("div", "is-size-7 has-text-grey-light", o.path));
+    r.append(t, radio); card.append(r);
+  });
+  tvStep(card, "Download space limit", st.cacheGb, 1, 500, 1, (v) => fetch("/api/settings", { method: "POST", body: JSON.stringify({ cacheGb: v }) }), " GB");
+  tvStep(card, "Songs per page", P.songsPerPage, 10, 200, 10, (v) => tvSave({ songsPerPage: v }));
+  card.append(el("h2", "title is-5 mt-4 mb-1", "Sessions"));
+  tvPress(card, "Start a new session", "is-dark", async () => { await post("/api/session/new", { name: "", clearQueue: false }); toast("New session started."); });
+  tvPress(card, "Start a new session and clear the queue", "is-dark", async () => { await post("/api/session/new", { name: "", clearQueue: true }); toast("New session started."); });
+  card.append(el("h2", "title is-5 mt-4 mb-1", "Song sources"));
+  const srcs = st.sources || [];
+  card.append(el("p", "is-size-7 has-text-grey mb-2", srcs.length ? srcs.length + (srcs.length === 1 ? " song source is set up." : " song sources are set up.") + " Change them from a phone." : "None yet. Add them from a phone (Settings)."));
+  card.append(el("h2", "title is-5 mt-4 mb-1", "System info"));
+  card.append(el("p", "is-size-7 mb-4", "Version " + (st.version || "") + " · " + st.songCount + " songs"));
+  tvPress(card, "Quit DDKaraoke", "is-danger is-light", () => post("/api/quit", {}));
+  const disc = el("div", "tv-row"); disc.tabIndex = 0; disc.style.cssText = "display:block;margin-top:1.2rem";
+  card.append(disc);
+  disc.append(el("h2", "title is-5 mb-2", "Disclaimer"));
+  disc.append(el("p", "is-size-6 mb-2", "This app was built from PiKaraoke and has been manually and heavily customised."));
+  disc.append(el("p", "is-size-6 mb-2", "As an important disclaimer, Claude, an AI assistant, was mainly used to assist porting the app to Android TV and add features such as Interact, the vocal toggle, and the settings screens."));
+  disc.append(el("p", "is-size-6 mb-2", "No generative AI images are used in the app's own artwork. We refuse to use any. The button icons come from open icon sets, Fontello and Material Design. Thumbnails in search results come from the sources themselves."));
+  disc.append(el("h2", "title is-5 mt-4 mb-1", "Usage note"));
+  disc.append(el("p", "is-size-6 mb-2", "This app does not come with any karaoke songs or videos. Content comes from third-party sources the host chooses, such as YouTube or song databases. All content rights remain with their respective owners. The host is responsible for the sources they choose and how the content is used, including following each source's terms and applicable copyright laws. Anything downloaded stays on the host's own device."));
+  disc.append(el("p", "is-size-6 mb-2", "The app is provided as is. Content availability and functionality may change."));
+  addCredits(disc);
+  const done = el("button", "button is-info mt-3", "Close"); done.style.cssText = "min-height:3.2rem;width:100%"; done.onclick = () => post("/api/closesettings", {}); card.append(done);
+  setTimeout(() => close.focus(), 100);
+}
+
+// spinning mascot for loading states, random each time
+function loader(text) {
+  const box = el("div", "km-loader");
+  const img = el("img"); img.alt = ""; img.src = "/static/pals/pal" + (1 + Math.floor(Math.random() * 5)) + ".webp";
+  box.append(img, el("span", "", text));
+  return box;
+}
+
+// credits block, used on the phone and TV disclaimer
+function addCredits(into) {
+  into.append(el("h2", "title is-6 mt-4 mb-1", "Credits"));
+  const rows = [
+    ["Splash logo", "Original art by @ichigobunart, edited by kingarcher"],
+    ["Mascots", "Loading buddies by @ichigobunart"],
+    ["Splash video", "Retro synthwave vaporwave 80s neon, by agp_studios (Pixabay)"],
+    ["Background music", "Lobby Time, by Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (creativecommons.org/licenses/by/4.0)"],
+    ["Score sounds", "Drum roll by Iwan Sounds and DIY, applause by Sandermotions and Amada44 (all CC0, via Wikimedia Commons)"],
+  ];
+  const list = el("dl", "is-size-7 km-credits");
+  for (const [what, who] of rows) { list.append(el("dt", "", what)); list.append(el("dd", "", who)); }
+  into.append(list);
+}
+
+async function renderSettings(card) {
+  card.append(el("h1", "title", "Settings"));
+  card.append(el("h2", "title is-5 mb-1", "Your name"));
+  const nf = el("div", "field has-addons"); const nc = el("div", "control is-expanded"); const ni = el("input", "input");
+  ni.maxLength = 24; ni.placeholder = "Your name"; ni.value = name; nc.append(ni);
+  const nb = el("div", "control"); const nsave = el("button", "button is-info", "Save"); nb.append(nsave); nf.append(nc, nb); card.append(nf);
+  const nnote = el("p", "is-size-7 has-text-grey mb-4");
+  nsave.onclick = () => { const v = ni.value.trim(); if (!v) { nnote.textContent = "Please type a name."; return; } name = v; store.set("name", name); showName(); nnote.textContent = "Saved."; };
+  card.append(nnote);
+  card.append(el("h2", "title is-5 mb-1", "Your colour"));
+  card.append(el("p", "is-size-7 has-text-grey mb-2", "Your name shows in this colour on the TV."));
+  const cf = el("div", "field has-addons"); const cc = el("div", "control"); const ci = el("input"); ci.type = "color"; ci.style.cssText = "height:2.5rem;width:4rem;padding:0;border:0;background:none";
+  cc.append(ci); const cb2 = el("div", "control"); const csave = el("button", "button is-info", "Save colour"); cb2.append(csave); cf.append(cc, cb2); card.append(cf);
+  const cnote = el("p", "is-size-7 has-text-grey mb-4"); card.append(cnote);
+  fetch("/api/colour?name=" + encodeURIComponent(name)).then((r) => r.json()).then((j) => { ci.value = j.colour; }).catch(() => {});
+  csave.onclick = async () => { if (!name) { askName(); return; } const r = await post("/api/colour", { name, colour: ci.value }); cnote.textContent = r.ok ? "Saved." : (r.error || "Could not save."); };
+  if (!isAdmin) {
+    card.append(el("p", "mb-3", "Host only. Enter the host PIN to change settings, skip songs and remove songs from the queue."));
+    const f = el("div", "field has-addons"); const c1 = el("div", "control is-expanded"); const inp = el("input", "input");
+    inp.type = "password"; inp.inputMode = "numeric"; inp.maxLength = 4; inp.placeholder = "Host PIN"; c1.append(inp);
+    const c2 = el("div", "control"); const b = el("button", "button is-info", "Unlock"); c2.append(b); f.append(c1, c2); card.append(f);
+    const note = el("p", "is-size-7 has-text-warning"); card.append(note);
+    const go = async () => {
+      const r = await (await fetch("/api/login", { method: "POST", body: JSON.stringify({ pin: inp.value }) })).json();
+      if (r.ok) { isAdmin = true; render(); } else note.textContent = r.error;
+    };
+    b.onclick = go; inp.addEventListener("keypress", (e) => { if (e.key === "Enter") go(); });
+    return;
+  }
+  const st = await (await fetch("/api/settings")).json();
+  const P = await (await fetch("/api/prefs")).json(); prefs = P;
+  if (!TV) {
+    const lo = el("div", "notification is-dark is-flex is-justify-content-space-between is-align-items-center mb-4");
+    lo.append(el("span", "", "You are logged in as host on this phone."));
+    const out = el("button", "button is-warning is-small", "Log out");
+    out.onclick = async () => { await post("/api/logout", {}); isAdmin = false; toast("Logged out of host mode."); render(); };
+    lo.append(out); card.append(lo);
+  }
+  if (TV) { card.textContent = ""; return renderSettingsTV(card, st, P); }
+
+  if (st.pin) {
+    card.append(el("h2", "title is-5 mb-1", "Host PIN"));
+    card.append(el("p", "title is-3 has-text-warning mb-1", st.pin));
+    card.append(el("p", "is-size-7 has-text-grey mb-3", "Only shown on the TV. Phones need this PIN to open Settings."));
+  } else card.append(el("p", "is-size-7 has-text-grey mb-3", "The host PIN is shown on the TV's Settings screen."));
+  const np = el("input", "input mb-2"); np.type = "password"; np.inputMode = "numeric"; np.maxLength = 4; np.placeholder = "New 4-digit PIN (leave empty to keep)"; card.append(np);
+
+  section(card, "Splash screen settings");
+  const cBgV = checkRow(card, "Disable background video", P.disableBgVideo);
+  const cBgM = checkRow(card, "Disable background music", P.disableBgMusic);
+  const cScore = checkRow(card, "Show the score screen after each song", P.scoreEnabled);
+  const cClock = checkRow(card, "Show splash clock", P.showClock);
+  const cQr = checkRow(card, "Hide the URL and QR code", P.hideQr);
+  const cSess = checkRow(card, "Show the karaoke session name on phones", P.showSessionName);
+  const cNotice = checkRow(card, "Show a notice in the top left of the TV when someone queues a song", P.showQueueNotices);
+  const cPromo = checkRow(card, "Show a party food suggestion (only appears on Singapore networks)", P.showPromo);
+  const cDel = checkRow(card, "Remove a song from the box after it plays (off keeps songs until the space is needed)", P.deleteAfterPlay);
+  const nVol = numRow(card, "Default volume of the videos (min 0, max 100)", P.videoVolume, 0, 100);
+  const nMus = numRow(card, "Volume of the background music (min 0, max 100)", P.bgMusicVolume, 0, 100);
+  const nDelay = numRow(card, "The delay in seconds before playing the next song", P.nextDelay, 0, 60);
+  card.append(el("p", "is-size-7 has-text-grey", "The splash logo is built in and cannot be changed in this app."));
+
+  section(card, "Colours");
+  const colF = el("div", "field mb-3"); colF.append(el("label", "label is-size-7", "Colour (buttons, bars and links)"));
+  const col = el("input"); col.type = "color"; col.value = P.accent; colF.append(col); card.append(colF);
+  const sHue = numRow(card, "Background colour (0-360)", P.bgHue, 0, 360);
+  const sSat = numRow(card, "Strength (0-300)", P.bgSat, 0, 300);
+  const sBri = numRow(card, "Brightness (0-200)", P.bgBright, 0, 200);
+  const reset = el("button", "button is-dark is-small", "Reset colours");
+  reset.onclick = () => { col.value = "#c3b94b"; sHue.value = 135; sSat.value = 135; sBri.value = 55; };
+  card.append(reset);
+
+  section(card, "Score phrases");
+  const ta = (label, v) => { const w = el("div", "field mb-2"); w.append(el("label", "label is-size-7", label)); const t = el("textarea", "textarea"); t.rows = 5; t.value = v; w.append(t); card.append(w); return t; };
+  const tLow = ta("LOW score phrases (score < 30), one per line", P.scoreLow);
+  const tMid = ta("MID score phrases (30 to 59), one per line", P.scoreMid);
+  const tHigh = ta("HIGH score phrases (60 and up), one per line", P.scoreHigh);
+
+  section(card, "Queue");
+  const cFair = checkRow(card, "Fair queue: singers take turns, so one person cannot fill the whole queue", P.fairQueue);
+  const nLimit = numRow(card, "Limit of songs an individual can have in the queue (0 = no limit)", P.limitPerPerson, 0, 50);
+
+  section(card, "Where songs are stored");
+  card.append(el("p", "is-size-7 has-text-grey mb-2", st.songCount + " songs in the chosen place."));
+  let chosen = st.folder;
+  const box = el("div", "mb-2");
+  st.options.forEach((o) => {
+    const r = el("label", "box km-row"); const radio = el("input"); radio.type = "radio"; radio.name = "place"; radio.checked = o.path === st.folder;
+    radio.onchange = () => { chosen = o.path; };
+    const t = el("div", "km-t"); t.append(el("div", "", o.label + ": " + o.freeGb + " GB free of " + o.totalGb + " GB"), el("div", "is-size-7 has-text-grey-light", o.path));
+    r.append(radio, t); box.append(r);
+  });
+  card.append(box);
+  card.append(el("p", "is-size-7 has-text-warning mb-3", "Plugged in a drive just now? Close and reopen the app so it shows up here."));
+  const gb = numRow(card, "Download space limit in GB (oldest songs are removed first)", st.cacheGb, 1, 500);
+  const nPer = numRow(card, "Default songs per page on the Songs page", P.songsPerPage, 10, 200);
+
+  section(card, "Sessions");
+  card.append(el("p", "is-size-7 has-text-grey mb-2", "A session is one party. Rankings and Play History can be shown for one session or all of them. Giving it a name shows the name on every phone."));
+  const sn = el("input", "input mb-2"); sn.maxLength = 30; sn.placeholder = "Session name (optional)"; card.append(sn);
+  const sq2 = el("label", "checkbox is-size-7 mb-2"); const sqb = el("input"); sqb.type = "checkbox"; sq2.append(sqb, document.createTextNode(" Also clear the queue")); card.append(sq2);
+  const sbtn = el("button", "button is-dark is-small mt-2", "Start a new session"); const snote = el("p", "is-size-7 has-text-grey mt-1");
+  sbtn.onclick = async () => {
+    if (!confirm("Start a new session?")) return;
+    const r = await post("/api/session/new", { name: sn.value, clearQueue: sqb.checked });
+    snote.textContent = r.ok ? "New session started." : (r.error || "Could not start one."); if (r.ok) { sn.value = ""; refreshRibbon(); }
+  };
+  card.append(sbtn, snote);
+
+  section(card, "Community Databases");
+  card.append(el("p", "is-size-7 has-text-grey mb-2", "Addresses of song databases to search on the Add New page. A song downloads only when it is next in the queue, and goes away after it plays unless you keep it. Only add sources you are allowed to use. What you download is your responsibility."));
+  const srcBox = el("div", "mb-2"); card.append(srcBox);
+  const srcRows = [];
+  function addSrcRow(url, nm) {
+    const row = el("div", "field has-addons mb-2");
+    const c0 = el("div", "control"); const ni2 = el("input", "input"); ni2.placeholder = "Name"; ni2.maxLength = 30; ni2.value = nm || ""; ni2.style.width = "7em"; c0.append(ni2);
+    const c1 = el("div", "control is-expanded"); const ui = el("input", "input"); ui.placeholder = "https://..."; ui.value = url || ""; c1.append(ui);
+    const c2 = el("div", "control"); const rm = el("button", "button is-danger is-light", "✕"); c2.append(rm);
+    row.append(c0, c1, c2); srcBox.append(row);
+    const ref = { ni: ni2, ui }; srcRows.push(ref);
+    rm.onclick = () => { row.remove(); srcRows.splice(srcRows.indexOf(ref), 1); };
+  }
+  (st.sources || []).forEach((x) => addSrcRow(x.url, x.name));
+  const addSrc = el("button", "button is-dark is-small", "+ Add a source"); addSrc.onclick = () => addSrcRow("", "");
+  card.append(addSrc);
+
+  section(card, "System info");
+  card.append(el("p", "is-size-7 mb-1", "App version: " + (st.version || "")));
+  card.append(el("p", "is-size-7 mb-1", "Songs on the box: " + st.songCount));
+  const cur = st.options.find((o) => o.path === st.folder);
+  if (cur) card.append(el("p", "is-size-7 mb-1", "Free space where songs are stored: " + cur.freeGb + " GB of " + cur.totalGb + " GB"));
+
+  section(card, "Keep the same address");
+  card.append(el("p", "is-size-7 mb-2", "Your router gives each device an address, and now and then it gives the TV box a new one, usually after a restart. When that happens, phones that were open stop working until they scan the code again, and they forget their name, favourites and history."));
+  card.append(el("p", "is-size-7 mb-2", "To stop it, tell your router to always give this box the same address. In the router's settings, look for DHCP reservation, address reservation or static lease (often under LAN or Network). Pick this box from the list of devices and save."));
+  card.append(el("p", "is-size-7 has-text-grey mb-3", "This box's address is the one printed under the QR code on the TV" + (location.hostname !== "127.0.0.1" ? " (right now: " + location.hostname + ")." : ".")));
+
+  const save = el("button", "button is-primary mt-4", "Save settings"); const note = el("p", "is-size-7 has-text-grey mt-2");
+  save.onclick = async () => {
+    note.className = "is-size-7 has-text-grey mt-2"; note.textContent = "Saving...";
+    const body = { folder: chosen, cacheGb: parseInt(gb.value, 10) || 2 };
+    if (np.value) body.newPin = np.value;
+    const srcNow = srcRows.map((r) => ({ url: r.ui.value.trim(), name: r.ni.value.trim() })).filter((x) => x.url);
+    if (JSON.stringify(srcNow) !== JSON.stringify((st.sources || []).map((x) => ({ url: x.url, name: x.name })))) body.sources = srcNow;
+    const r1 = await (await fetch("/api/settings", { method: "POST", body: JSON.stringify(body) })).json();
+    if (!r1.ok) { note.className = "is-size-7 has-text-warning mt-2"; note.textContent = r1.error; return; }
+    const r2 = await (await fetch("/api/prefs", { method: "POST", body: JSON.stringify({
+      disableBgVideo: cBgV.checked, disableBgMusic: cBgM.checked, scoreEnabled: cScore.checked, showClock: cClock.checked, hideQr: cQr.checked,
+      showSessionName: cSess.checked, showQueueNotices: cNotice.checked, showPromo: cPromo.checked, deleteAfterPlay: cDel.checked, videoVolume: +nVol.value, bgMusicVolume: +nMus.value, nextDelay: +nDelay.value,
+      accent: col.value, bgHue: +sHue.value, bgSat: +sSat.value, bgBright: +sBri.value,
+      scoreLow: tLow.value, scoreMid: tMid.value, scoreHigh: tHigh.value,
+      fairQueue: cFair.checked, limitPerPerson: +nLimit.value, songsPerPage: +nPer.value,
+    }) })).json();
+    if (!r2.ok) { note.className = "is-size-7 has-text-warning mt-2"; note.textContent = r2.error; return; }
+    np.value = ""; note.textContent = "Saved."; loadSongs();
+  };
+  card.append(save, note);
+
+  section(card, "Quit");
+  const quit = el("button", "button is-danger is-light", "Quit DDKaraoke");
+  quit.onclick = async () => { if (confirm("Close the app on the TV? Phones will stop working until it is opened again.")) await post("/api/quit", {}); };
+  card.append(quit);
+}
+
+function renderAbout(card) {
+  card.append(el("h1", "title", "Disclaimer"));
+  card.append(el("p", "mb-3", "This app was built from PiKaraoke and has been manually and heavily customised."));
+  card.append(el("p", "mb-3", "As an important disclaimer, Claude, an AI assistant, was mainly used to assist porting the app to Android TV and add features such as Interact, the vocal toggle, and the settings screens."));
+  card.append(el("p", "mb-3", "No generative AI images are used in the app's own artwork. We refuse to use any. The button icons come from open icon sets, Fontello and Material Design. Thumbnails in search results come from the sources themselves."));
+  card.append(el("h2", "title is-5 mt-4 mb-1", "Usage note"));
+  card.append(el("p", "mb-3", "This app does not come with any karaoke songs or videos. Content comes from third-party sources the host chooses, such as YouTube or song databases. All content rights remain with their respective owners. The host is responsible for the sources they choose and how the content is used, including following each source's terms and applicable copyright laws. Anything downloaded stays on the host's own device."));
+  card.append(el("p", "mb-3", "The app is provided as is. Content availability and functionality may change."));
+  addCredits(card);
+}
+
+// page rendering
+async function render() {
+  const v = $("#view"); v.textContent = "";
+  if (location.hostname === "127.0.0.1") v.append(el("p", "has-text-warning is-size-7 mb-2", "On the TV: press BACK on the remote to close this screen."));
+  const card = el("div", "box"); v.append(card);
+  if (tab === "home") {
+    const j = await (await fetch("/api/queue")).json();
+    card.append(el("h1", "title", "Now Playing"));
+    card.append(el("p", "subtitle has-text-warning", j.now ? j.now : "Nothing is playing right now."));
+    card.append(el("h2", "title is-5", "Next Song"));
+    card.append(el("p", "has-text-warning", j.queue.length ? j.queue[0].singer + ": " + j.queue[0].title : "No song is queued."));
+    if (j.now) await homeControls(card);
+  } else if (tab === "browse") await renderBrowse(card);
+  else if (tab === "downloads") await renderDownloads(card);
+  else if (tab === "search") await renderSearch(card);
+  else if (tab === "favs") {
+    card.append(el("h1", "title", "Favourites"));
+    card.append(starNote());
+    await loadSongs();
+    if (!favs.length) card.append(msg("No favourites yet. Tap the heart on a song."));
+    favs.forEach((f) => {
+      const here = songs.find((s2) => s2.file === f.file);
+      card.append(songRow(Object.assign({}, here || {}, f, { title: (here && here.title) || f.title, local: !!here }), {}));
+    });
+  } else if (tab === "history") {
+    card.append(el("h1", "title", "My history"));
+    card.append(starNote());
+    await loadSongs();
+    let sung = [];
+    try { sung = (await (await fetch("/api/history?session=all")).json()).entries.filter((e) => name && e.singer.toLowerCase() === name.toLowerCase() && e.status === "played"); } catch (e) {}
+    const map = new Map();
+    hist.forEach((h) => map.set(h.file, { file: h.file, title: h.title, ts: h.ts, remote: h.remote, sung: false }));
+    sung.forEach((e) => {
+      const cur = map.get(e.file);
+      if (cur) { cur.sung = true; cur.ts = Math.max(cur.ts, e.at); }
+      else map.set(e.file, { file: e.file, title: e.title, ts: e.at, remote: e.kid && e.base ? remoteFromEntry(e) : null, sung: true });
+    });
+    const list = [...map.values()].sort((a, b) => b.ts - a.ts);
+    if (!list.length) card.append(msg("Songs you request or sing will show up here."));
+    list.forEach((x) => {
+      const here = songs.find((s2) => s2.file === x.file);
+      card.append(songRow(Object.assign({}, here || {}, x, { local: !!here }), {}));
+    });
+  } else if (tab === "interact") await renderInteract(card);
+  else if (tab === "settings") await renderSettings(card);
+  else if (tab === "about") renderAbout(card);
+  else if (tab === "rankings") await renderRankings(card);
+  else if (tab === "playlog") await renderPlayLog(card);
+  else if (tab === "queue") {
+    const j = await (await fetch("/api/queue")).json();
+    card.append(el("h1", "title", "Queue"));
+    if (j.now) card.append(el("p", "has-text-warning", "▶ Now singing: " + j.now));
+    if (!j.queue.length) card.append(msg("Nothing queued yet. Pick a song!"));
+    else card.append(el("p", "is-size-7 has-text-grey mb-2", "Drag ☰ to move a song, or tap ⋯ for more."));
+    const list = el("div"); card.append(list);
+    j.queue.forEach((it, i) => {
+      const d = el("div", "box km-qrow"); d.dataset.id = it.id;
+      const h = el("div", "km-handle", "☰"); h.title = "Drag to move";
+      const t = el("div", "km-t");
+      t.append(el("div", "", (i + 1) + ". " + it.title), el("div", "is-size-7 has-text-grey-light", "\uD83C\uDFA4 " + it.singer + (it.state === "downloading" ? " · Downloading " + it.percent + "%" : it.state === "waiting" ? " · Waiting to download" : it.state === "error" ? " · Download problem" : "")));
+      const more = el("button", "button km-ic", "⋯"); more.title = "More"; more.style.cssText = "min-width:46px;min-height:46px;flex:none";
+      more.onclick = () => queueMenu(it, i, j.queue.length);
+      d.append(h, t, more); list.append(d);
+    });
+    if (window.Sortable && j.queue.length > 1) {
+      Sortable.create(list, {
+        handle: ".km-handle", animation: 150, ghostClass: "km-ghost", forceFallback: false,
+        onStart: () => { qBusy = true; },
+        onEnd: async (e) => { if (e.newIndex !== e.oldIndex) await post("/api/queue/move", { id: +e.item.dataset.id, to: e.newIndex }); qBusy = false; render(); },
+      });
+    }
+  }
+}
+setInterval(() => { if (isAdmin && !TV) fetch("/api/admin").catch(() => {}); }, 60000);
+let lastSig = null;
+async function refreshIfChanged() {
+  if (qBusy || scrubDragging || $("#modal").style.display === "flex" || document.getElementById("nameGate")) return;
+  let sig = null;
+  try {
+    if (tab === "home") {
+      const [q, p] = await Promise.all([fetch("/api/queue"), fetch("/api/player")]).then((rs) => Promise.all(rs.map((r) => r.json())));
+      sig = JSON.stringify([q.now, q.queue.map((i) => i.id), p.vocals.on, p.key.semitones, p.mono, !!p.file]);
+    } else if (tab === "queue") {
+      const q = await (await fetch("/api/queue")).json();
+      sig = JSON.stringify([q.now, q.queue.map((i) => [i.id, i.state, Math.floor(i.percent / 10)])]);
+    } else if (tab === "downloads") {
+      const d = await (await fetch("/api/downloads")).json();
+      sig = JSON.stringify(d.items.map((i) => [i.file, i.state, Math.floor(i.percent / 10)]));
+    }
+  } catch (e) { return; }
+  if (sig === null) return;
+  if (lastSig === null) { lastSig = sig; return; }
+  if (sig !== lastSig) { lastSig = sig; const y = window.scrollY; await render(); window.scrollTo(0, y); }
+}
+setInterval(refreshIfChanged, 4000);
+(async () => {
+  try {
+    const pr = await (await fetch("/api/promo")).json();
+    if (pr.show) { const d = $("#promo"); const a = el("a", "", pr.text); a.href = pr.url; a.target = "_blank"; a.rel = "noopener"; d.append(a); d.style.display = "block"; $("#foodrow").style.display = ""; $("#foodlink").href = pr.url; }
+  } catch (e) {}
+  try { isAdmin = (await (await fetch("/api/admin")).json()).admin; } catch (e) {}
+  try { prefs = await (await fetch("/api/prefs")).json(); } catch (e) {}
+  const want = new URLSearchParams(location.search).get("tab");
+  setTab(want || "home");
+  if (!name && location.hostname !== "127.0.0.1") askName();
+})();
+</script>
+</body>
+</html>

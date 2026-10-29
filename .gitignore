@@ -1,0 +1,10 @@
+# build output and local files
+.gradle/
+build/
+app/build/
+local.properties
+*.apk
+*.jks
+*.keystore
+release-signing/
+.idea/

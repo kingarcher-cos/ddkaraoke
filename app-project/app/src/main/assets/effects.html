@@ -1,0 +1,134 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin:0; height:100%; background:transparent; overflow:hidden; }
+  #km-nico { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9000; }
+  #km-nico .c {
+    position: absolute; left: 0; top: 0; white-space: pre; line-height: 1.15; font-weight: 700;
+    font-family: "Noto Sans CJK JP", Arial, sans-serif; color: #fff; will-change: transform;
+    text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 2px 2px rgba(0,0,0,.6);
+  }
+  #km-nico .km-balloon {
+    position: absolute; bottom: -10vh; white-space: nowrap; font-size: 6vh; font-weight: 800; color: #fff;
+    padding: .25em .7em; border-radius: 1em; background: rgba(0, 0, 0, .35);
+    text-shadow: 0 0 6px #000, 2px 2px 3px #000; box-shadow: 0 0 18px rgba(255, 255, 255, .25);
+  }
+  .km-overlay { position: fixed; z-index: 8995; pointer-events: none; object-fit: contain; background: transparent; }
+  .km-overlay-full { inset: 0; width: 100vw; height: 100vh; }
+  .km-overlay-corner { right: 1vw; bottom: 6vh; width: 34vw; height: 34vh; object-position: right bottom; }
+  .km-overlay-random { width: 36vw; height: 36vh; }
+</style></head>
+<body>
+<div id="km-nico" aria-hidden="true"></div>
+<script>
+(function () {
+  const layer = document.getElementById("km-nico");
+  const ROWS = 11;
+  const SCROLL_MS = 4000;
+  const SIZE = { small: 0.6, medium: 1, big: 1.5 };
+  const COLORS = { white: "#fff", red: "#f00", pink: "#ff8080", orange: "#fc0", yellow: "#ff0",
+                   green: "#0f0", cyan: "#0ff", blue: "#00f", purple: "#c000ff", black: "#000" };
+  const lanes = new Array(ROWS).fill(null);
+
+  function rowHeight() { return window.innerHeight / ROWS; }
+
+  function freeScrollRow(width, now) {
+    const W = window.innerWidth;
+    const speed = (W + width) / SCROLL_MS;
+    const free = [];
+    for (let i = 0; i < ROWS; i++) {
+      const p = lanes[i];
+      if (!p) { free.push(i); continue; }
+      const elapsed = now - p.start;
+      const prevTail = W - elapsed * p.speed + p.width;
+      if (prevTail > W) continue;
+      const prevGone = SCROLL_MS - elapsed;
+      const catchUp = speed > p.speed ? (W - prevTail) / (speed - p.speed) : Infinity;
+      if (catchUp >= prevGone) free.push(i);
+    }
+    const pool = free.length ? free : [...Array(ROWS).keys()];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function showMessage(m) {
+    const now = performance.now();
+    const d = document.createElement("div");
+    d.className = "c";
+    d.textContent = m.text;
+    const scale = SIZE[m.size] || 1;
+    d.style.fontSize = (rowHeight() * 0.8 * scale) + "px";
+    d.style.color = COLORS[m.color] || "#fff";
+    if (m.color === "black") d.style.textShadow = "1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff";
+    layer.append(d);
+    const width = d.offsetWidth, W = window.innerWidth, H = rowHeight();
+    const row = freeScrollRow(width, now);
+    lanes[row] = { start: now, speed: (W + width) / SCROLL_MS, width: width };
+    const y = Math.min(row * H, window.innerHeight - d.offsetHeight);
+    d.animate([{ transform: "translate(" + W + "px," + y + "px)" }, { transform: "translate(" + (-width) + "px," + y + "px)" }],
+              { duration: SCROLL_MS, easing: "linear" }).onfinish = () => d.remove();
+  }
+
+  const SFX = {};
+  function sound(key) {
+    const a = (SFX[key] = SFX[key] || new Audio("/static/sfx/" + key + ".mp3"));
+    const p = a.cloneNode();
+    p.volume = 0.9;
+    p.play().catch(() => {});
+  }
+  function balloon(c) {
+    const b = document.createElement("div");
+    b.className = "km-balloon";
+    b.textContent = c.emoji + c.user + c.emoji;
+    b.style.left = (8 + Math.random() * 70) + "vw";
+    const sway = (Math.random() < 0.5 ? -1 : 1) * (3 + Math.random() * 4);
+    layer.append(b);
+    b.animate([
+      { transform: "translate(0, 0) rotate(0deg)", opacity: 0 },
+      { transform: "translate(" + sway + "vw, -30vh) rotate(" + sway + "deg)", opacity: 1, offset: 0.25 },
+      { transform: "translate(" + (-sway) + "vw, -65vh) rotate(" + (-sway) + "deg)", opacity: 1, offset: 0.7 },
+      { transform: "translate(" + sway + "vw, -110vh) rotate(0deg)", opacity: 0 },
+    ], { duration: 5500, easing: "ease-out" }).onfinish = () => b.remove();
+  }
+
+  let overlayEl = null;
+  function playOverlay(o) {
+    if (overlayEl) overlayEl.remove();
+    const v = document.createElement("video");
+    v.src = "/static/overlays/" + o.key + ".webm";
+    v.autoplay = true;
+    v.playsInline = true;
+    v.volume = 0.9;
+    v.className = "km-overlay km-overlay-" + (o.placement || "full");
+    if (o.placement === "random") {
+      v.style.left = (5 + Math.random() * 55) + "vw";
+      v.style.top = (8 + Math.random() * 40) + "vh";
+    }
+    const done = () => { v.remove(); if (overlayEl === v) overlayEl = null; };
+    v.addEventListener("ended", done);
+    v.addEventListener("error", done);
+    setTimeout(done, 12000);
+    document.body.append(v);
+    overlayEl = v;
+    v.play().catch(() => {});
+  }
+
+  let since = -1;
+  async function poll() {
+    try {
+      const j = await (await fetch("/api/events?since=" + since, { cache: "no-store" })).json();
+      const first = since < 0;
+      since = j.last;
+      if (!first) {
+        j.events.forEach((e) => {
+          if (e.type === "message") showMessage(e);
+          else if (e.type === "cheer") { sound(e.key); balloon(e); }
+          else if (e.type === "overlay") playOverlay(e);
+        });
+      }
+    } catch (e) {}
+    setTimeout(poll, 700);
+  }
+  poll();
+})();
+</script>
+</body></html>
