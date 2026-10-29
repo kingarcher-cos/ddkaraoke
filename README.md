@@ -1,8 +1,8 @@
 # DDKaraoke
 
-Our chef at DoughBaybee.sg had a few free weeks and ended up hyperfixating on building a home server from his old laptop. Installing karaoke on it started as a joke, but then he realised he could actually make something he'd use.
+Our chef at DoughBaybee.sg had a few free weeks and ended up hyperfixating on building a home server from his old laptop. Installing karaoke on it started as a joke, but then he realised he could actually put together something he'd use.
 
-He didn't want to keep paying for karaoke outside when the places didn't have his songs or the features he wanted. So, he started customising it himself, putting a really dusty IT diploma he hadn't used in years and bare bones knowledge of Visual Studios back to work (further disclaimers below; if anything does not work as intended, please let us know. Apologies in advance 🥺).
+He didn't want to keep paying for karaoke outside when the places didn't have his songs or the features he wanted. So, he started customising it himself, putting a really dusty IT diploma he hadn't used in years and bare bones knowledge of Visual Studio back to work (further disclaimers below; if anything does not work as intended, please let us know. Apologies in advance 🥺).
 
 It's built on PiKaraoke and has been heavily customised along the way. Now it runs directly on an Android TV (you can also use it on an Android tablet) without needing a separate server, and he's sharing it for free for anyone who wants to try it.
 
