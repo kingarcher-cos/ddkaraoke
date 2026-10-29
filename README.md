@@ -8,7 +8,7 @@ It's built on PiKaraoke and has been heavily customised along the way. Now it ru
 
 ## What it does
 
-The TV shows a QR code, and everyone scans it with their phone to pick songs, cheer and see the queue. No app is needed on the phones.
+The TV shows a QR code, and everyone scans it with their phone to pick songs, cheer and see the queue. The host can also add their own community song databases by pasting their chosen repository URL in the host settings. No app is needed on the phones.
 
 Needs Android 7.0 or newer and a recent Android System WebView. Tested on an NVIDIA Shield. Other TVs used as the screen have not been tested yet.
 
