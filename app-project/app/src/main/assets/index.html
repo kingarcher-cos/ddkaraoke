@@ -60,6 +60,7 @@
   .km-loader img { width:3.2rem; height:auto; animation:km-spin 2.4s linear infinite; }
   @keyframes km-spin { to { transform:rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .km-loader img { animation:none; } }
+  .km-popup [data-tab="settings"] { display:none !important; }
   .km-credits { display:grid; grid-template-columns:max-content 1fr; gap:.2rem .9rem; opacity:.8; line-height:1.35; }
   .km-credits dt { font-weight:700; }
   .km-credits dd { margin:0; }
@@ -146,7 +147,9 @@ const store = {
 };
 let tab = "home", songs = [], q = "";
 let isAdmin = false, prefs = {};
-const TV = location.hostname === "127.0.0.1";
+const POPUP = new URLSearchParams(location.search).has("popup");   // menu panel on the TV: full phone page, no Settings entry
+if (POPUP) document.documentElement.classList.add("km-popup");
+const TV = location.hostname === "127.0.0.1" && !POPUP;
 if (TV) document.body.classList.add("tv");
 let favs = store.get("favs", []).map((f) => typeof f === "string" ? { file: f, title: f.replace(/\.[^.]+$/, ""), remote: null } : f);
 let hist = store.get("hist", []), name = store.get("name", "");

@@ -55,6 +55,8 @@ class MainActivity : Activity() {
 
     private var tv: WebView? = null
     private var settingsPage: WebView? = null
+    private var menuPage: WebView? = null
+    private lateinit var menuButton: TextView
     private lateinit var idleLayer: View
     private lateinit var upNext: TextView
     private lateinit var joinText: TextView
@@ -203,6 +205,31 @@ class MainActivity : Activity() {
         }
         settingsPage = sp
         root.addView(sp, FrameLayout.LayoutParams(-1, -1))
+
+        // popup menu: the phone page without Settings, slides in from the left
+        val mp = WebView(this).apply {
+            setBackgroundColor(Color.parseColor("#222826"))
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            visibility = View.GONE
+            isFocusable = true
+            isFocusableInTouchMode = true
+        }
+        menuPage = mp
+        root.addView(mp, FrameLayout.LayoutParams(minOf(dp(460), resources.displayMetrics.widthPixels), -1, Gravity.START))
+
+        // top left: small hamburger, faint so it stays out of the way during songs
+        val burger = text(22f, Color.WHITE, Typeface.BOLD).apply {
+            text = "☰"
+            gravity = Gravity.CENTER
+            alpha = 0.45f
+            background = android.graphics.drawable.GradientDrawable().apply { setColor(Color.argb(90, 0, 0, 0)); cornerRadius = dp(10).toFloat() }
+            isClickable = true
+            setOnClickListener { if (menuOpen()) closeMenu() else openMenu() }
+            setOnFocusChangeListener { v, focused -> v.alpha = if (focused) 1f else 0.45f }
+        }
+        menuButton = burger
+        root.addView(burger, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.TOP or Gravity.START).apply { setMargins(dp(12), dp(12), 0, 0) })
 
         // first run and after updates: host has to accept before anything else
         val consent = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#F2141417")); isClickable = true }
@@ -471,8 +498,32 @@ class MainActivity : Activity() {
         settingsPage?.visibility = View.GONE
     }
 
+    private fun menuOpen() = menuPage?.visibility == View.VISIBLE
+
+    private fun openMenu() {
+        menuPage?.apply {
+            loadUrl("http://127.0.0.1:$port/?popup=1")
+            visibility = View.VISIBLE
+            requestFocus()
+        }
+        menuButton.text = "✕"
+        menuButton.translationX = minOf(dp(460), resources.displayMetrics.widthPixels).toFloat()
+        menuButton.alpha = 0.9f
+    }
+
+    private fun closeMenu() {
+        menuPage?.visibility = View.GONE
+        menuButton.text = "☰"
+        menuButton.translationX = 0f
+        menuButton.alpha = 0.45f
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (!accepted) return super.onKeyDown(keyCode, event)
+        if (menuOpen()) {
+            if (keyCode == KeyEvent.KEYCODE_BACK) { closeMenu(); return true }
+            return super.onKeyDown(keyCode, event)
+        }
         if (settingsOpen()) {
             if (keyCode == KeyEvent.KEYCODE_BACK) { closeSettings(); return true }
             return super.onKeyDown(keyCode, event)
