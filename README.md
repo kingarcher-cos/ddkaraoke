@@ -62,6 +62,8 @@ More detail on everything that is used is in [NOTICE.md](NOTICE.md).
 
 To decide whether to show a local food suggestion (Singapore only), the app asks a free service, api.country.is, which country your network is in. That service can see your TV's public internet address. Nothing else is sent. If the check fails, the TV's time zone and region are used instead.
 
+The app also asks GitHub now and then whether a newer version exists (you can switch this off in Settings). GitHub can see your TV's public internet address when it does. If there is one, the TV asks once whether you want to update, and you can always do it later from Settings > Check for updates.
+
 ## For people who want to build it
 
 You need JDK 17 and the Android SDK (platform 34, build tools 34.0.0).

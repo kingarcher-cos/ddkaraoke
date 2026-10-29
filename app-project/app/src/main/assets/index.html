@@ -667,6 +667,29 @@ function tvPress(card, label, cls, action) {
   b.onclick = () => { if (!armed) { armed = true; const old = b.textContent; b.textContent = "Press again to confirm"; setTimeout(() => { armed = false; b.textContent = old; }, 4000); } else { armed = false; action(); } };
   card.append(b); return b;
 }
+// Updates box, used on the phone and the TV settings. Talks to /api/update.
+async function updateBox(card, tvStyle) {
+  const status = el("p", "is-size-7 mb-2", "");
+  const check = el("button", "button is-dark", "Check for updates");
+  const go = el("button", "button is-primary", "Update now"); go.style.display = "none";
+  if (tvStyle) for (const b of [check, go]) b.style.cssText += ";min-height:3.2rem;margin:.35rem 0;display:block;width:100%";
+  go.style.display = "none";
+  let timer = null;
+  const show = (u) => {
+    clearTimeout(timer);
+    if (u.error) status.textContent = u.error;
+    else if (u.busy === "downloading") status.textContent = "Downloading... " + u.percent + "%";
+    else if (u.busy === "installing") status.textContent = "Almost there. Follow the install prompt on the TV.";
+    else if (u.available) status.textContent = "Version " + u.latest.replace(/^v/, "") + " is available. You have " + u.current + ".";
+    else status.textContent = u.latest ? "You are up to date (" + u.current + ")." : "You have " + u.current + ". Press the button to look for a newer version.";
+    go.style.display = u.available && !u.busy ? (tvStyle ? "block" : "") : "none";
+    if (u.busy === "downloading" || u.busy === "installing") timer = setTimeout(async () => show(await (await fetch("/api/update")).json()), 1500);
+  };
+  check.onclick = async () => { status.textContent = "Checking..."; check.disabled = true; show(await post("/api/update/check", {})); check.disabled = false; };
+  go.onclick = async () => { await post("/api/update/install", {}); show({ busy: "downloading", percent: 0 }); };
+  card.append(status, check, go);
+  try { show(await (await fetch("/api/update")).json()); } catch (e) {}
+}
 async function renderSettingsTV(card, st, P) {
   const top = el("div", "tv-row"); top.append(el("h1", "title mb-0", "Settings"));
   const close = el("button", "button is-info", "Close"); close.onclick = () => post("/api/closesettings", {}); top.append(close); card.append(top);
@@ -722,6 +745,9 @@ async function renderSettingsTV(card, st, P) {
   card.append(el("p", "is-size-7 has-text-grey mb-2", srcs.length ? srcs.length + (srcs.length === 1 ? " song source is set up." : " song sources are set up.") + " Change them from a phone." : "None yet. Add them from a phone (Settings)."));
   card.append(el("h2", "title is-5 mt-4 mb-1", "System info"));
   card.append(el("p", "is-size-7 mb-4", "Version " + (st.version || "") + " · " + st.songCount + " songs"));
+  card.append(el("h2", "title is-5 mt-4 mb-1", "Updates"));
+  tvToggle(card, "Look for new versions by itself", "autoUpdate", P.autoUpdate);
+  await updateBox(card, true);
   tvPress(card, "Quit DDKaraoke", "is-danger is-light", () => post("/api/quit", {}));
   const disc = el("div", "tv-row"); disc.tabIndex = 0; disc.style.cssText = "display:block;margin-top:1.2rem";
   card.append(disc);
@@ -918,6 +944,10 @@ async function renderSettings(card) {
   };
   card.append(save, note);
 
+  section(card, "Updates");
+  const cAuto = checkRow(card, "Look for new versions by itself", P.autoUpdate);
+  cAuto.onchange = () => fetch("/api/prefs", { method: "POST", body: JSON.stringify({ autoUpdate: cAuto.checked }) });
+  await updateBox(card, false);
   section(card, "Quit");
   const quit = el("button", "button is-danger is-light", "Quit DDKaraoke");
   quit.onclick = async () => { if (confirm("Close the app on the TV? Phones will stop working until it is opened again.")) await post("/api/quit", {}); };

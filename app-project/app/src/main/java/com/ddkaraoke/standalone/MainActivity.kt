@@ -56,6 +56,7 @@ class MainActivity : Activity() {
     private var tv: WebView? = null
     private var settingsPage: WebView? = null
     private var menuPage: WebView? = null
+    private lateinit var updater: Updater
     private lateinit var menuButton: TextView
     private lateinit var idleLayer: View
     private lateinit var upNext: TextView
@@ -80,6 +81,7 @@ class MainActivity : Activity() {
         library = Library(java.io.File(chosen ?: getExternalFilesDir("songs")?.absolutePath ?: filesDir.absolutePath))
         cache = CacheManifest(library)
         media = MediaLists(this)
+        updater = Updater(this)
         history = HistoryStore(java.io.File(filesDir, "history.json"))
         downloader = Downloader(library, cache, { settings.cacheGb }) {
             queue.snapshot().map { it.song.file }.toSet() + player.file
@@ -90,6 +92,7 @@ class MainActivity : Activity() {
         handler.post(ticker)
         applyPrefs()
         settingsButton.post { settingsButton.requestFocus() }
+        handler.postDelayed({ lookForUpdate() }, 20000)
     }
 
     // Home button: silence everything. Coming back resumes.
@@ -287,7 +290,7 @@ class MainActivity : Activity() {
 
     private fun startServer() {
         server = GuestServer(
-            this, port, library, queue, events, player, settings, cache, downloader, auth, history, media,
+            this, port, library, queue, events, player, settings, cache, downloader, auth, history, media, updater,
             qrPng = { localIp()?.let { ip ->
                 val out = java.io.ByteArrayOutputStream()
                 qr("http://$ip:$port").compress(Bitmap.CompressFormat.PNG, 100, out)
@@ -297,6 +300,7 @@ class MainActivity : Activity() {
             onQuit = { handler.post { finishAffinity() } },
             onPrefsChanged = { handler.post { applyPrefs() } },
             onCloseSettings = { handler.post { closeSettings() } },
+            onUpdate = { handler.post { startUpdate() } },
             isAccepted = { accepted },
             inSingapore = { singapore },
         ) { if (player.isPlaying()) player.title else null }.also {
@@ -462,6 +466,35 @@ class MainActivity : Activity() {
                 handler.postDelayed({ findCountry() }, 6 * 60 * 60 * 1000L)
             }
         }.start()
+    }
+
+    // New release check: at start and every 12 hours. Asks once per release, and only while nothing is playing.
+    private fun lookForUpdate() {
+        Thread {
+            if (settings.bool("autoUpdate", true)) updater.check()
+            handler.post { askAboutUpdate() }
+            handler.postDelayed({ lookForUpdate() }, 12 * 60 * 60 * 1000L)
+        }.start()
+    }
+
+    private fun askAboutUpdate() {
+        if (!updater.newer() || settings.text("updateAsked", "") == updater.latest) return
+        if (!accepted || player.isPlaying() || settingsOpen() || menuOpen() || isFinishing) {
+            handler.postDelayed({ askAboutUpdate() }, 60000)
+            return
+        }
+        settings.putText("updateAsked", updater.latest)
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Update available")
+            .setMessage("DDKaraoke " + updater.latest.removePrefix("v") + " is out (you have " + updater.current + ").\n\nIf you pick Later, you can still update from Settings > Check for updates.")
+            .setPositiveButton("Update now", android.content.DialogInterface.OnClickListener { _, _ -> startUpdate() })
+            .setNegativeButton("Later", null)
+            .show()
+    }
+
+    private fun startUpdate() {
+        android.widget.Toast.makeText(this, "Downloading the update...", android.widget.Toast.LENGTH_LONG).show()
+        Thread { updater.update() }.start()
     }
 
     // apply host settings

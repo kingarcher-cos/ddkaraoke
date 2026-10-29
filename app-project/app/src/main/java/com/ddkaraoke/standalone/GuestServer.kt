@@ -19,11 +19,13 @@ class GuestServer(
     private val auth: Auth,
     private val history: HistoryStore,
     private val media: MediaLists,
+    private val updater: Updater,
     private val qrPng: () -> ByteArray?,
     private val onSongEnded: (skipped: Boolean) -> Unit,
     private val onQuit: () -> Unit,
     private val onPrefsChanged: () -> Unit,
     private val onCloseSettings: () -> Unit,
+    private val onUpdate: () -> Unit,
     private val isAccepted: () -> Boolean,
     private val inSingapore: () -> Boolean,
     private val nowPlaying: () -> String?,
@@ -80,6 +82,9 @@ class GuestServer(
                 session.method == Method.POST && session.uri == "/api/audioinfo" -> { player.setMono(body(session).optBoolean("mono", false)); ok() }
                 session.method == Method.POST && session.uri == "/api/queue/move" -> moveInQueue(session)
                 session.method == Method.POST && session.uri == "/api/closesettings" -> { session.parseBody(HashMap()); if (isTv(session)) onCloseSettings(); ok() }
+                session.method == Method.GET && session.uri == "/api/update" -> json(Response.Status.OK, updater.state())
+                session.method == Method.POST && session.uri == "/api/update/check" -> hostOnly(session) { session.parseBody(HashMap()); updater.check(); json(Response.Status.OK, updater.state()) }
+                session.method == Method.POST && session.uri == "/api/update/install" -> hostOnly(session) { session.parseBody(HashMap()); onUpdate(); ok() }
                 session.method == Method.GET && session.uri == "/api/promo" -> promo()
                 session.method == Method.GET && session.uri == "/api/colour" -> json(Response.Status.OK, JSONObject().put("colour", colourFor(session.parms["name"] ?: "")))
                 session.method == Method.POST && session.uri == "/api/colour" -> setColour(session)
@@ -493,7 +498,7 @@ class GuestServer(
 
     private val boolPrefs = mapOf(
         "disableBgVideo" to false, "disableBgMusic" to false, "hideQr" to false,
-        "showClock" to true, "showSessionName" to true, "fairQueue" to true, "deleteAfterPlay" to false, "showQueueNotices" to true, "showPromo" to true,
+        "showClock" to true, "showSessionName" to true, "fairQueue" to true, "deleteAfterPlay" to false, "showQueueNotices" to true, "showPromo" to true, "autoUpdate" to true,
     )
     private val intPrefs = mapOf(
         "videoVolume" to (0..100 to 100), "bgMusicVolume" to (0..100 to 30), "nextDelay" to (0..60 to 0),
